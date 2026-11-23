@@ -4,7 +4,10 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 
-const NEEDLES = ["SUPABASE_SECRET_KEY", "sb_secret_"];
+// The env var NAME, any concrete secret key (sb_secret_ + key body), and the real values when known.
+// (supabase-js itself contains the bare prefix check `startsWith("sb_secret_")`, which is not a key.)
+const NEEDLES = ["SUPABASE_SECRET_KEY"];
+const KEY_RE = /sb_secret_[A-Za-z0-9_-]{8,}/;
 const secretValue = process.env.SUPABASE_SECRET_KEY;
 if (secretValue && secretValue.length > 12) NEEDLES.push(secretValue);
 if (process.env.SESSION_SECRET && process.env.SESSION_SECRET.length > 12) NEEDLES.push(process.env.SESSION_SECRET);
@@ -22,13 +25,14 @@ const browserDirs = [".next/static", ".open-next/assets"];
 for (const f of browserDirs.flatMap(walk)) {
   if (!/\.(js|css|html|json|txt|map)$/.test(f)) continue;
   const t = readFileSync(f, "utf8");
-  for (const n of NEEDLES) if (t.includes(n)) hits.push(`${relative(".", f)} contains ${n.startsWith("sb_") || n.length < 25 ? n : "(secret value)"}`);
+  for (const n of NEEDLES) if (t.includes(n)) hits.push(`${relative(".", f)} contains ${n.length < 25 ? n : "(secret value)"}`);
+  if (KEY_RE.test(t)) hits.push(`${relative(".", f)} contains an sb_secret_ key`);
 }
 for (const f of ["app", "components", "lib"].flatMap(walk)) {
   if (!/\.(ts|tsx)$/.test(f)) continue;
   const t = readFileSync(f, "utf8");
   if (!/^\s*["']use client["']/.test(t)) continue;
-  for (const n of NEEDLES) if (t.includes(n)) hits.push(`${relative(".", f)} ("use client") contains ${n.length < 25 ? n : "(secret value)"}`);
+  for (const n of [...NEEDLES, "sb_secret_"]) if (t.includes(n)) hits.push(`${relative(".", f)} ("use client") contains ${n.length < 25 ? n : "(secret value)"}`);
 }
 if (!walk(".next/static").length) console.warn("check-secrets: .next/static not found — run `next build` first for a full check.");
 if (hits.length) {

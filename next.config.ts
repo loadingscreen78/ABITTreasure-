@@ -6,7 +6,10 @@ const nextConfig: NextConfig = {
   // /s/<token> is a QR landing URL. It is served by one static shell page so a
   // scan costs no server render (Cloudflare Workers free plan: 10 ms CPU).
   async rewrites() {
-    return [{ source: "/s/:token", destination: "/scan" }];
+    return [
+      { source: "/s/:token", destination: "/scan" },
+      { source: "/print/team/:id", destination: "/print/team" },
+    ];
   },
   async headers() {
     return [

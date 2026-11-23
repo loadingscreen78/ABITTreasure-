@@ -468,3 +468,113 @@ button {
   body::after { display: none; }
   .no-print { display: none !important; }
 }
+
+/* ============ organiser (dense variant) ============ */
+.dense {
+  font-size: 14px;
+  line-height: 1.45;
+}
+.dense .sheet-wide {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 20px 40px;
+}
+.tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  background: var(--color-card);
+}
+.tbl th,
+.tbl td {
+  border: 1px solid var(--color-ink);
+  padding: 6px 8px;
+  text-align: left;
+  vertical-align: top;
+}
+.tbl th {
+  background: var(--color-ink);
+  color: var(--color-paper);
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.tbl tr.is-flagged td {
+  background: color-mix(in srgb, var(--color-tape) 30%, var(--color-card));
+}
+.mini-punch {
+  display: inline-grid;
+  grid-template-columns: repeat(8, 10px);
+  gap: 2px;
+}
+.mini-punch span {
+  height: 12px;
+  border: 1px solid var(--color-ink);
+}
+.mini-punch span.is-done {
+  background: var(--color-ink);
+}
+.mini-punch span.is-current {
+  background: var(--color-tape);
+}
+.pill {
+  display: inline-block;
+  border: 1px solid currentColor;
+  padding: 1px 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.pill-signal {
+  background: var(--color-signal);
+  color: var(--color-ink);
+  border-color: var(--color-ink);
+}
+.pill-ok {
+  color: var(--color-verified);
+}
+.pill-err {
+  color: var(--color-error);
+}
+.panel {
+  background: var(--color-card);
+  border: var(--rule);
+  box-shadow: var(--hard-shadow);
+  padding: 14px;
+}
+.panel h2 {
+  margin: 0 0 10px;
+}
+.grid-2 {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+}
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.btn-row .btn {
+  width: auto;
+}
+.btn-danger {
+  background: var(--color-card);
+  color: var(--color-error);
+  border-color: var(--color-error);
+  box-shadow: 4px 4px 0 0 var(--color-error);
+}
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: color-mix(in srgb, var(--color-ink) 88%, transparent);
+  color: var(--color-paper);
+  display: grid;
+  place-items: center;
+}

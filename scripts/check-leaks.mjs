@@ -7,8 +7,17 @@ import { join, relative } from "node:path";
 const file = existsSync("content/hunt.json") ? "content/hunt.json" : "content/hunt.example.json";
 const hunt = JSON.parse(readFileSync(file, "utf8"));
 const needles = new Set();
+// Generic English / programming words that occur in any framework bundle (React, supabase-js)
+// and so cannot identify an answer, plus strings that are part of the public event branding
+// (the final phrase is the first word of the event title).
+const GENERIC = new Set(["none", "null", "nil", "nothing", "no answer", "not possible", "impossible", "no number", "no solution", "does not exist", "doesnt exist", "anchor", "eleven"]);
+const branding = [hunt.event.title, hunt.event.series, hunt.event.tagline, hunt.event.institute].join(" ").toLowerCase();
 const add = (s) => {
-  if (typeof s === "string" && s.trim().length > 3) needles.add(s.trim());
+  if (typeof s !== "string") return;
+  const t = s.trim();
+  if (t.length <= 3 || GENERIC.has(t.toLowerCase())) return;
+  if (branding.split(/[^a-z0-9]+/).includes(t.toLowerCase())) return;
+  needles.add(t);
 };
 add(hunt.settings.secretWord);
 add(process.env.SECRET_WORD);
