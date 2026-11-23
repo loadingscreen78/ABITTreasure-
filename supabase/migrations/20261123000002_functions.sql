@@ -1,0 +1,317 @@
+-- ABIT Tech Treasure Hunt — atomic game moves.
+-- Answer MATCHING happens in TypeScript; these functions only change state.
+-- Each one runs in a single transaction, locks the team row (SELECT … FOR UPDATE),
+-- checks the optimistic `version`, writes ledger rows with ON CONFLICT DO NOTHING
+-- and bumps `version`, so two phones can never double-advance or double-score.
+
+create or replace function public._team_json(t public.teams)
+returns jsonb language sql immutable as $$
+  select to_jsonb(t) - 'password_hash' - 'password_enc';
+$$;
+
+-- Is the hunt open for this team right now? Rehearsal teams (T00) may play any time.
+create or replace function public._event_open(p_rehearsal boolean)
+returns text language plpgsql stable as $$
+declare ev public.event_state%rowtype;
+begin
+  if p_rehearsal then return 'OPEN'; end if;
+  select * into ev from public.event_state where id = 1;
+  if ev.status = 'DRAFT' then return 'NOT_STARTED'; end if;
+  if ev.status = 'PAUSED' then return 'PAUSED'; end if;
+  if ev.status = 'ENDED' then return 'TIMES_UP'; end if;
+  if ev.started_at is null or ev.started_at > now() then return 'NOT_STARTED'; end if;
+  if ev.ends_at is not null and now() > ev.ends_at then return 'TIMES_UP'; end if;
+  return 'OPEN';
+end $$;
+
+-- Everything the server needs to build one team's view, in one round-trip.
+create or replace function public.team_context(p_team_id text)
+returns jsonb language plpgsql stable as $$
+declare
+  t public.teams%rowtype;
+  cur_q text;
+begin
+  select * into t from public.teams where id = p_team_id;
+  if not found then return null; end if;
+  select q.id into cur_q
+    from public.questions q join public.checkpoints c on c.code = q.checkpoint_code
+   where c.ord = t.unlocked_cp order by q.position offset t.q_index limit 1;
+  return jsonb_build_object(
+    'team', public._team_json(t),
+    'sessionVersion', t.session_version,
+    'event', (select jsonb_build_object('status', e.status, 'startedAt', e.started_at, 'endsAt', e.ends_at,
+                                        'settings', e.settings, 'event', e.event, 'resultsRevealed', e.results_revealed)
+                from public.event_state e where e.id = 1),
+    'checkpoints', (select coalesce(jsonb_agg(jsonb_build_object('code', c.code, 'order', c.ord, 'token', c.token,
+                                   'location', c.location, 'arrivalCredit', c.arrival_credit,
+                                   'arrivalNote', c.arrival_note, 'reveal', c.reveal) order by c.ord), '[]'::jsonb)
+                      from public.checkpoints c),
+    'questions', (select coalesce(jsonb_agg(jsonb_build_object('id', q.id, 'checkpointCode', q.checkpoint_code,
+                                  'position', q.position, 'clue', q.clue, 'title', q.title, 'prompt', q.prompt,
+                                  'code', q.code, 'match', q.match, 'accept', q.accept, 'nearMiss', q.near_miss,
+                                  'isFinal', q.is_final) order by q.clue), '[]'::jsonb)
+                    from public.questions q),
+    'currentQuestionId', cur_q,
+    'wrongCount', (select count(*) from public.attempts a
+                    where a.team_id = t.id and a.question_id = cur_q and not a.correct and not a.near_miss),
+    'solved', (select coalesce(jsonb_agg(distinct a.question_id), '[]'::jsonb) from public.attempts a
+                where a.team_id = t.id and a.correct),
+    'scores', (select coalesce(jsonb_object_agg(s.ref, s.marks), '{}'::jsonb) from public.score_entries s
+                where s.team_id = t.id),
+    'hints', (select coalesce(jsonb_agg(h.clue), '[]'::jsonb) from public.hint_uses h where h.team_id = t.id),
+    'now', now()
+  );
+end $$;
+
+-- Mark a team as ARRIVED at its next checkpoint and award the location-clue marks.
+create or replace function public.arrive(p_team_id text, p_cp_code text, p_expected_version int, p_device_id text default null)
+returns jsonb language plpgsql as $$
+declare
+  t public.teams%rowtype;
+  cp public.checkpoints%rowtype;
+  st jsonb;
+  open_state text;
+begin
+  select * into t from public.teams where id = p_team_id for update;
+  if not found then return jsonb_build_object('ok', false, 'reason', 'NO_TEAM'); end if;
+  if t.version <> p_expected_version then
+    return jsonb_build_object('ok', false, 'reason', 'CONFLICT', 'version', t.version);
+  end if;
+  if t.status <> 'ACTIVE' then return jsonb_build_object('ok', false, 'reason', 'NOT_ACTIVE'); end if;
+  open_state := public._event_open(t.is_rehearsal);
+  if open_state <> 'OPEN' then return jsonb_build_object('ok', false, 'reason', open_state); end if;
+  select * into cp from public.checkpoints where code = p_cp_code;
+  if not found then return jsonb_build_object('ok', false, 'reason', 'NO_CP'); end if;
+  if cp.ord <> t.unlocked_cp or t.arrived then
+    return jsonb_build_object('ok', false, 'reason', 'NOT_NEXT');
+  end if;
+
+  select settings into st from public.event_state where id = 1;
+  insert into public.arrivals (team_id, cp_code, device_id) values (t.id, cp.code, p_device_id)
+    on conflict (team_id, cp_code) do nothing;
+  if cp.arrival_credit is not null and jsonb_typeof(cp.arrival_credit -> 'clue') = 'number' then
+    insert into public.score_entries (team_id, ref, marks, source, reason)
+    values (t.id, 'clue:' || lpad(cp.arrival_credit ->> 'clue', 2, '0'),
+            coalesce((st ->> 'marksPerClue')::int, 5), 'arrival', cp.code)
+    on conflict (team_id, ref) do nothing;
+  end if;
+
+  update public.teams
+     set arrived = true, q_index = 0, cooldown_until = null, version = version + 1,
+         last_activity_at = now(), started_at = coalesce(started_at, now())
+   where id = t.id
+  returning * into t;
+  return jsonb_build_object('ok', true, 'team', public._team_json(t));
+end $$;
+
+-- Record one answer attempt. `p_correct` / `p_near_miss` come from the TypeScript matcher.
+create or replace function public.record_attempt(
+  p_team_id text, p_question_id text, p_expected_version int,
+  p_correct boolean, p_near_miss boolean, p_raw text, p_normalized text,
+  p_device_id text default null, p_idem_key text default null
+) returns jsonb language plpgsql as $$
+declare
+  t public.teams%rowtype;
+  cp public.checkpoints%rowtype;
+  q public.questions%rowtype;
+  st jsonb;
+  prev jsonb;
+  cur_q text;
+  n_q int;
+  wrong_before int;
+  attempt_no int;
+  full_within int;
+  marks_per int;
+  cooldown_s int;
+  marks int;
+  res jsonb;
+  open_state text;
+  new_cooldown timestamptz;
+begin
+  select * into t from public.teams where id = p_team_id for update;
+  if not found then return jsonb_build_object('ok', false, 'reason', 'NO_TEAM'); end if;
+
+  -- Idempotent replay: the same submit retried after a network drop never counts twice.
+  if p_idem_key is not null then
+    select a.result into prev from public.attempts a where a.team_id = t.id and a.idem_key = p_idem_key;
+    if found and prev is not null then
+      return prev || jsonb_build_object('replay', true, 'team', public._team_json(t));
+    end if;
+  end if;
+
+  if t.version <> p_expected_version then
+    return jsonb_build_object('ok', false, 'reason', 'CONFLICT', 'version', t.version);
+  end if;
+  if t.status <> 'ACTIVE' then return jsonb_build_object('ok', false, 'reason', 'NOT_ACTIVE'); end if;
+  open_state := public._event_open(t.is_rehearsal);
+  if open_state <> 'OPEN' then return jsonb_build_object('ok', false, 'reason', open_state); end if;
+  if not t.arrived then return jsonb_build_object('ok', false, 'reason', 'NOT_ARRIVED'); end if;
+
+  select * into cp from public.checkpoints where ord = t.unlocked_cp;
+  select qq.id into cur_q from public.questions qq where qq.checkpoint_code = cp.code
+   order by qq.position offset t.q_index limit 1;
+  if cur_q is distinct from p_question_id then
+    return jsonb_build_object('ok', false, 'reason', 'WRONG_QUESTION', 'currentQuestionId', cur_q);
+  end if;
+  if t.cooldown_until is not null and t.cooldown_until > now() then
+    return jsonb_build_object('ok', false, 'reason', 'COOLDOWN', 'cooldownUntil', t.cooldown_until);
+  end if;
+
+  select * into q from public.questions where id = p_question_id;
+  select settings into st from public.event_state where id = 1;
+  full_within := coalesce((st ->> 'fullMarksWithinAttempts')::int, 3);
+  marks_per   := coalesce((st ->> 'marksPerClue')::int, 5);
+  cooldown_s  := coalesce((st ->> 'cooldownSecondsAfterLimit')::int, 15);
+
+  if p_near_miss then
+    res := jsonb_build_object('ok', true, 'outcome', 'NEAR_MISS');
+    insert into public.attempts (team_id, question_id, raw, normalized, correct, near_miss, attempt_no, device_id, idem_key, result)
+    values (t.id, q.id, left(p_raw, 200), left(p_normalized, 200), false, true, null, p_device_id, p_idem_key, res);
+    update public.teams set last_activity_at = now() where id = t.id returning * into t;
+    return res || jsonb_build_object('team', public._team_json(t));
+  end if;
+
+  select count(*) into wrong_before from public.attempts a
+   where a.team_id = t.id and a.question_id = q.id and not a.correct and not a.near_miss;
+  attempt_no := wrong_before + 1;
+
+  if p_correct then
+    marks := case when attempt_no <= full_within then marks_per else 0 end;
+    insert into public.score_entries (team_id, ref, marks, source, reason)
+    values (t.id, 'clue:' || lpad(q.clue::text, 2, '0'), marks, 'question', q.id)
+    on conflict (team_id, ref) do nothing;
+
+    if q.is_final then
+      insert into public.score_entries (team_id, ref, marks, source, reason)
+      values (t.id, 'final', coalesce((st ->> 'finalStageMarks')::int, 15), 'final', q.id)
+      on conflict (team_id, ref) do nothing;
+      update public.teams
+         set status = 'FINISHED', finished_at = now(), cooldown_until = null,
+             judge_code = lpad(floor(random() * 10000)::int::text, 4, '0'),
+             version = version + 1, last_activity_at = now()
+       where id = t.id returning * into t;
+    else
+      select count(*) into n_q from public.questions where checkpoint_code = cp.code;
+      if t.q_index + 1 < n_q then
+        update public.teams set q_index = q_index + 1, cooldown_until = null, version = version + 1,
+               last_activity_at = now() where id = t.id returning * into t;
+      else
+        update public.teams set unlocked_cp = unlocked_cp + 1, arrived = false, q_index = 0, cooldown_until = null,
+               version = version + 1, last_activity_at = now() where id = t.id returning * into t;
+      end if;
+    end if;
+    res := jsonb_build_object('ok', true, 'outcome', 'CORRECT', 'marks', marks, 'attemptNo', attempt_no,
+                              'clue', q.clue, 'questionId', q.id, 'final', q.is_final);
+  else
+    new_cooldown := case when attempt_no > full_within then now() + make_interval(secs => cooldown_s) else null end;
+    update public.teams set cooldown_until = new_cooldown, version = version + 1, last_activity_at = now()
+     where id = t.id returning * into t;
+    res := jsonb_build_object('ok', true, 'outcome', 'WRONG', 'attemptNo', attempt_no,
+                              'attemptsLeft', greatest(full_within - attempt_no, 0),
+                              'scoring', attempt_no < full_within, 'cooldownUntil', new_cooldown,
+                              'questionId', q.id);
+  end if;
+
+  insert into public.attempts (team_id, question_id, raw, normalized, correct, near_miss, attempt_no, device_id, idem_key, result)
+  values (t.id, q.id, left(p_raw, 200), left(p_normalized, 200), p_correct, false, attempt_no, p_device_id, p_idem_key, res);
+  return res || jsonb_build_object('team', public._team_json(t));
+end $$;
+
+-- "Need a nudge?" — log once per clue; optional penalty from settings.hintPenalty.
+create or replace function public.use_hint(p_team_id text, p_clue int)
+returns jsonb language plpgsql as $$
+declare penalty int; inserted int;
+begin
+  insert into public.hint_uses (team_id, clue) values (p_team_id, p_clue) on conflict (team_id, clue) do nothing;
+  get diagnostics inserted = row_count;
+  select coalesce((settings ->> 'hintPenalty')::int, 0) into penalty from public.event_state where id = 1;
+  if inserted > 0 and penalty > 0 then
+    insert into public.score_entries (team_id, ref, marks, source, reason)
+    values (p_team_id, 'hint:' || lpad(p_clue::text, 2, '0'), -penalty, 'hint', 'nudge used')
+    on conflict (team_id, ref) do nothing;
+  end if;
+  return jsonb_build_object('ok', true, 'first', inserted > 0);
+end $$;
+
+-- Fixed-window rate limiter stored in Postgres (serverless-safe). Returns true if allowed.
+create or replace function public.throttle_hit(p_key text, p_limit int, p_window_seconds int)
+returns boolean language plpgsql as $$
+declare c int;
+begin
+  insert into public.login_throttle as lt (key, window_start, count) values (p_key, now(), 1)
+  on conflict (key) do update set
+    count = case when lt.window_start < now() - make_interval(secs => p_window_seconds) then 1 else lt.count + 1 end,
+    window_start = case when lt.window_start < now() - make_interval(secs => p_window_seconds) then now() else lt.window_start end
+  returning count into c;
+  return c <= p_limit;
+end $$;
+
+-- Wipe one team's progress (rehearsal reset / admin reset).
+create or replace function public.reset_team(p_team_id text)
+returns void language plpgsql as $$
+begin
+  delete from public.arrivals where team_id = p_team_id;
+  delete from public.attempts where team_id = p_team_id;
+  delete from public.score_entries where team_id = p_team_id;
+  delete from public.hint_uses where team_id = p_team_id;
+  delete from public.scan_logs where team_id = p_team_id;
+  update public.teams set status = 'ACTIVE', unlocked_cp = 1, arrived = false, q_index = 0, cooldown_until = null,
+         started_at = null, finished_at = null, final_confirmed = false, final_revoked = false, teamwork = null,
+         judge_code = null, version = version + 1, last_activity_at = null
+   where id = p_team_id;
+end $$;
+
+create or replace function public.reset_all()
+returns void language plpgsql as $$
+declare r record;
+begin
+  for r in select id from public.teams loop perform public.reset_team(r.id); end loop;
+  update public.event_state set status = 'DRAFT', started_at = null, ends_at = null, results_revealed = false,
+         updated_at = now() where id = 1;
+end $$;
+
+-- Aggregated snapshot for admin / judge / board polling (one round-trip every 3 s).
+create or replace function public.admin_snapshot()
+returns jsonb language sql stable as $$
+  select jsonb_build_object(
+    'now', now(),
+    'event', (select to_jsonb(e) from public.event_state e where e.id = 1),
+    'checkpoints', (select coalesce(jsonb_agg(jsonb_build_object('code', c.code, 'order', c.ord, 'token', c.token,
+                      'location', c.location, 'venueDetail', c.venue_detail) order by c.ord), '[]'::jsonb)
+                    from public.checkpoints c),
+    'teams', (select coalesce(jsonb_agg(x order by x ->> 'id'), '[]'::jsonb) from (
+      select public._team_json(t) || jsonb_build_object(
+        'clueMarks', (select coalesce(sum(s.marks), 0) from public.score_entries s where s.team_id = t.id and s.ref like 'clue:%'),
+        'finalMarks', (select coalesce(sum(s.marks), 0) from public.score_entries s where s.team_id = t.id and s.ref = 'final'),
+        'adjustMarks', (select coalesce(sum(s.marks), 0) from public.score_entries s where s.team_id = t.id and (s.ref like 'adj:%' or s.ref like 'hint:%')),
+        'scores', (select coalesce(jsonb_object_agg(s.ref, s.marks), '{}'::jsonb) from public.score_entries s where s.team_id = t.id),
+        'wrongCurrent', (select count(*) from public.attempts a where a.team_id = t.id and not a.correct and not a.near_miss
+                           and a.question_id = (select q.id from public.questions q join public.checkpoints c on c.code = q.checkpoint_code
+                                                 where c.ord = t.unlocked_cp order by q.position offset t.q_index limit 1)),
+        'wrongTotal', (select count(*) from public.attempts a where a.team_id = t.id and not a.correct and not a.near_miss),
+        'hintsUsed', (select count(*) from public.hint_uses h where h.team_id = t.id),
+        'outOfOrder', (select count(*) from public.scan_logs l where l.team_id = t.id and l.result = 'WRONG_TURN'),
+        'devices', (select count(distinct d) from (
+                      select device_id d from public.scan_logs where team_id = t.id and device_id is not null
+                      union select device_id from public.attempts where team_id = t.id and device_id is not null) dd),
+        'arrivals', (select coalesce(jsonb_object_agg(a.cp_code, a.at), '{}'::jsonb) from public.arrivals a where a.team_id = t.id)
+      ) as x
+      from public.teams t) teams_x)
+  );
+$$;
+
+-- ---------- lock the functions down: only the server's secret key may call them ----------
+do $$
+declare f text;
+begin
+  foreach f in array array[
+    'public._team_json(public.teams)', 'public._event_open(boolean)', 'public.team_context(text)',
+    'public.arrive(text, text, int, text)',
+    'public.record_attempt(text, text, int, boolean, boolean, text, text, text, text)',
+    'public.use_hint(text, int)', 'public.throttle_hit(text, int, int)', 'public.reset_team(text)',
+    'public.reset_all()', 'public.admin_snapshot()']
+  loop
+    execute format('revoke execute on function %s from public, anon, authenticated', f);
+    execute format('grant execute on function %s to service_role', f);
+  end loop;
+end $$;

@@ -1,0 +1,299 @@
+{
+  "event": {
+    "institute": "Ajay Binay Institute of Technology (Autonomous)",
+    "instituteShort": "ABIT",
+    "city": "Cuttack, Odisha",
+    "address": "Markat Nagar, CDA Sector-1, Cuttack – 753014",
+    "department": "Department of Computer Science",
+    "series": "CODE2CAREER",
+    "title": "Tech Treasure Hunt",
+    "tagline": "Decode • Discover • Win!",
+    "motto": "Tamaso Mā Jyotirgamaya — Lead me from darkness to light",
+    "coordinates": "20.4696° N, 85.8516° E",
+    "eligibility": "2nd-year students",
+    "teamSize": "3–4",
+    "durationMinutes": 20
+  },
+  "settings": {
+    "secretWord": "CHANGEME",
+    "marksPerClue": 5,
+    "fullMarksWithinAttempts": 3,
+    "cooldownSecondsAfterLimit": 15,
+    "finalStageMarks": 15,
+    "teamworkMax": 5,
+    "timeBonus": [
+      5,
+      3,
+      1
+    ],
+    "timeBonusMode": "tiered",
+    "hintPenalty": 0,
+    "loginEveryScan": false,
+    "showScoresOnBoard": false
+  },
+  "checkpoints": [
+    {
+      "code": "CP-01",
+      "order": 1,
+      "location": "Location 1 (placeholder)",
+      "venueDetail": "TODO(ORGANISER): exact spot",
+      "arrivalCredit": null,
+      "arrivalNote": null,
+      "questions": [
+        {
+          "id": "Q01",
+          "clue": 1,
+          "title": "Question 1",
+          "prompt": "Placeholder prompt for clue 1.",
+          "code": null,
+          "match": "acronym",
+          "accept": [
+            "answer1"
+          ],
+          "nearMiss": {}
+        }
+      ],
+      "reveal": {
+        "clue": 2,
+        "title": "Location clue 2",
+        "riddle": "Placeholder riddle pointing to CP-02.",
+        "nudge": "Placeholder nudge.",
+        "leadsTo": "CP-02"
+      }
+    },
+    {
+      "code": "CP-02",
+      "order": 2,
+      "location": "Location 2 (placeholder)",
+      "venueDetail": "TODO(ORGANISER): exact spot",
+      "arrivalCredit": {
+        "clue": 2,
+        "title": "Location clue 2",
+        "answer": "Location 2"
+      },
+      "arrivalNote": null,
+      "questions": [
+        {
+          "id": "Q03",
+          "clue": 3,
+          "title": "Question 3",
+          "prompt": "Placeholder prompt for clue 3.",
+          "code": "placeholder()",
+          "match": "exact",
+          "accept": [
+            "answer3"
+          ],
+          "nearMiss": {}
+        }
+      ],
+      "reveal": {
+        "clue": 4,
+        "title": "Location clue 4",
+        "riddle": "Placeholder riddle pointing to CP-03.",
+        "nudge": "Placeholder nudge.",
+        "leadsTo": "CP-03"
+      }
+    },
+    {
+      "code": "CP-03",
+      "order": 3,
+      "location": "Location 3 (placeholder)",
+      "venueDetail": "TODO(ORGANISER): exact spot",
+      "arrivalCredit": {
+        "clue": 4,
+        "title": "Location clue 4",
+        "answer": "Location 3"
+      },
+      "arrivalNote": null,
+      "questions": [
+        {
+          "id": "Q05",
+          "clue": 5,
+          "title": "Question 5",
+          "prompt": "Placeholder prompt for clue 5.",
+          "code": "placeholder()",
+          "match": "exact",
+          "accept": [
+            "answer5"
+          ],
+          "nearMiss": {}
+        }
+      ],
+      "reveal": {
+        "clue": 6,
+        "title": "Location clue 6",
+        "riddle": "Placeholder riddle pointing to CP-04.",
+        "nudge": "Placeholder nudge.",
+        "leadsTo": "CP-04"
+      }
+    },
+    {
+      "code": "CP-04",
+      "order": 4,
+      "location": "Location 4 (placeholder)",
+      "venueDetail": "TODO(ORGANISER): exact spot",
+      "arrivalCredit": {
+        "clue": 6,
+        "title": "Location clue 6",
+        "answer": "Location 4"
+      },
+      "arrivalNote": "Two questions at this checkpoint. Solve both to unlock the next clue.",
+      "questions": [
+        {
+          "id": "Q07",
+          "clue": 7,
+          "title": "Question 7",
+          "prompt": "Placeholder prompt for clue 7.",
+          "code": null,
+          "match": "no-such-number",
+          "accept": [
+            "answer7"
+          ],
+          "nearMiss": {}
+        },
+        {
+          "id": "Q08",
+          "clue": 8,
+          "title": "Question 8",
+          "prompt": "Placeholder prompt for clue 8.",
+          "code": null,
+          "match": "acronym",
+          "accept": [
+            "answer8"
+          ],
+          "nearMiss": {}
+        }
+      ],
+      "reveal": {
+        "clue": 9,
+        "title": "Location clue 9",
+        "riddle": "Placeholder riddle pointing to CP-05.",
+        "nudge": "Placeholder nudge.",
+        "leadsTo": "CP-05"
+      }
+    },
+    {
+      "code": "CP-05",
+      "order": 5,
+      "location": "Location 5 (placeholder)",
+      "venueDetail": "TODO(ORGANISER): exact spot",
+      "arrivalCredit": {
+        "clue": 9,
+        "title": "Location clue 9",
+        "answer": "Location 5"
+      },
+      "arrivalNote": null,
+      "questions": [
+        {
+          "id": "Q10",
+          "clue": 10,
+          "title": "Question 10",
+          "prompt": "Placeholder prompt for clue 10.",
+          "code": null,
+          "match": "html-tag",
+          "accept": [
+            "answer10"
+          ],
+          "nearMiss": {}
+        }
+      ],
+      "reveal": {
+        "clue": 11,
+        "title": "Location clue 11",
+        "riddle": "Placeholder riddle pointing to CP-06.",
+        "nudge": "Placeholder nudge.",
+        "leadsTo": "CP-06"
+      }
+    },
+    {
+      "code": "CP-06",
+      "order": 6,
+      "location": "Location 6 (placeholder)",
+      "venueDetail": "TODO(ORGANISER): exact spot",
+      "arrivalCredit": {
+        "clue": 11,
+        "title": "Location clue 11",
+        "answer": "Location 6"
+      },
+      "arrivalNote": "Scan the QR code provided by the volunteer.",
+      "questions": [
+        {
+          "id": "Q12",
+          "clue": 12,
+          "title": "Question 12",
+          "prompt": "Placeholder prompt for clue 12.",
+          "code": null,
+          "match": "secret-word",
+          "accept": [
+            "{{settings.secretWord}}"
+          ],
+          "nearMiss": {}
+        }
+      ],
+      "reveal": {
+        "clue": 13,
+        "title": "Location clue 13",
+        "riddle": "Placeholder riddle pointing to CP-07.",
+        "nudge": "Placeholder nudge.",
+        "leadsTo": "CP-07"
+      }
+    },
+    {
+      "code": "CP-07",
+      "order": 7,
+      "location": "Location 7 (placeholder)",
+      "venueDetail": "TODO(ORGANISER): exact spot",
+      "arrivalCredit": {
+        "clue": 13,
+        "title": "Location clue 13",
+        "answer": "Location 7"
+      },
+      "arrivalNote": null,
+      "questions": [
+        {
+          "id": "Q14",
+          "clue": 14,
+          "title": "Question 14",
+          "prompt": "Placeholder prompt for clue 14.",
+          "code": "placeholder()",
+          "match": "number",
+          "accept": [
+            "answer14"
+          ],
+          "nearMiss": {}
+        }
+      ],
+      "reveal": {
+        "clue": null,
+        "title": "Back to base",
+        "riddle": "Placeholder riddle pointing to CP-08.",
+        "nudge": null,
+        "leadsTo": "CP-08"
+      }
+    },
+    {
+      "code": "CP-08",
+      "order": 8,
+      "location": "Location 8 (placeholder)",
+      "venueDetail": "TODO(ORGANISER): exact spot",
+      "arrivalCredit": null,
+      "arrivalNote": "You made it back. One last lock to open.",
+      "questions": [
+        {
+          "id": "Q15",
+          "clue": 15,
+          "title": "Question 15",
+          "prompt": "Placeholder prompt for clue 15.",
+          "code": null,
+          "match": "acronym",
+          "accept": [
+            "answer15"
+          ],
+          "nearMiss": {},
+          "isFinal": true
+        }
+      ],
+      "reveal": null
+    }
+  ]
+}
