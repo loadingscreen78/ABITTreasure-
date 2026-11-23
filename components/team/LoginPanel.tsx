@@ -1,11 +1,9 @@
 "use client";
 import { useState } from "react";
-import { Wordmark } from "@/components/ui/brand";
 import { IconArrow, IconEye, IconLock } from "@/components/ui/icons";
 import { ErrorLine, Strip } from "@/components/ui/kit";
 import { api } from "@/lib/client/api";
 import { cpLabel } from "@/lib/game/format";
-import { BRAND } from "@/lib/brand";
 
 export function LoginPanel({ cp, reason, token, onLoggedIn }: { cp: number | null; reason?: "expired" | "every-scan"; token: string | null; onLoggedIn: () => void }) {
   const [teamId, setTeamId] = useState("");
@@ -29,21 +27,7 @@ export function LoginPanel({ cp, reason, token, onLoggedIn }: { cp: number | nul
   };
 
   return (
-    <div style={{ paddingTop: 18 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <Wordmark size="md" />
-        <span className="t-meta">{BRAND.series}</span>
-      </div>
-      <h1 className="t-display" style={{ margin: "22px 0 8px" }}>
-        Tech
-        <br />
-        Treasure
-        <br />
-        Hunt
-      </h1>
-      <p style={{ margin: "0 0 16px", fontWeight: 500 }}>{BRAND.tagline}</p>
-      <hr className="rule-2" style={{ width: 72 }} />
-
+    <div>
       {cp !== null && (
         <p className="t-meta" style={{ margin: "18px 0 0", display: "flex", alignItems: "center", gap: 8 }}>
           <IconLock size={14} /> Checkpoint detected · {cpLabel(cp)}

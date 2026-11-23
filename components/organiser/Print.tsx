@@ -60,12 +60,21 @@ const PRINT_BASE = `
 
 // ---------- 1. checkpoint QR cards: A4 landscape, two A5 cards with cut marks ----------
 export function PrintCheckpoints() {
+  return (
+    <Shell roles={["admin"]} title="Checkpoint QR cards" page={`${PRINT_BASE} @page { size: A4 landscape; margin: 0 } .p-sheet { width: 297mm; height: 210mm; display: grid; grid-template-columns: 1fr 1fr; }`}>
+      <PrintCheckpointsBody />
+    </Shell>
+  );
+}
+
+// Hooks live in the body so nothing is fetched until the organiser gate has passed.
+function PrintCheckpointsBody() {
   const { data, error } = useData<{ base: string; cards: { code: string; order: number; url: string }[] }>("kind=checkpoints");
   const cards = data?.cards ?? [];
   const pairs: (typeof cards)[] = [];
   for (let i = 0; i < cards.length; i += 2) pairs.push(cards.slice(i, i + 2));
   return (
-    <Shell roles={["admin"]} title="Checkpoint QR cards" page={`${PRINT_BASE} @page { size: A4 landscape; margin: 0 } .p-sheet { width: 297mm; height: 210mm; display: grid; grid-template-columns: 1fr 1fr; }`}>
+    <>
       {error && <Strip tone="error">{error}</Strip>}
       {data?.base.includes("localhost") && (
         <div className="no-print">
@@ -101,7 +110,7 @@ export function PrintCheckpoints() {
           <CutMarks />
         </section>
       ))}
-    </Shell>
+    </>
   );
 }
 
@@ -117,9 +126,18 @@ function CutMarks() {
 
 // ---------- 2. volunteer secret-word QR (plain text, not a URL) ----------
 export function PrintSecretWord() {
-  const { data, error } = useData<{ text: string }>("kind=secret-word");
   return (
     <Shell roles={["admin"]} title="Volunteer secret-word QR" page={`${PRINT_BASE} @page { size: A5 portrait; margin: 0 } .p-sheet { width: 148mm; height: 210mm; }`}>
+      <PrintSecretWordBody />
+    </Shell>
+  );
+}
+
+// Hooks live in the body so nothing is fetched until the organiser gate has passed.
+function PrintSecretWordBody() {
+  const { data, error } = useData<{ text: string }>("kind=secret-word");
+  return (
+    <>
       {error && <Strip tone="error">{error}</Strip>}
       {data && (
         <section className="p-sheet" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "8mm" }}>
@@ -140,18 +158,27 @@ export function PrintSecretWord() {
       <p className="no-print t-meta" style={{ textAlign: "center" }}>
         Payload is plain text and changes automatically when the admin changes the secret word. Reprint after any change.
       </p>
-    </Shell>
+    </>
   );
 }
 
 // ---------- 3. credential slips: 10 per A4 ----------
 export function PrintCredentials() {
+  return (
+    <Shell roles={["admin"]} title="Team credential slips" page={`${PRINT_BASE} @page { size: A4 portrait; margin: 0 } .p-sheet { width: 210mm; height: 297mm; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(5, 1fr); }`}>
+      <PrintCredentialsBody />
+    </Shell>
+  );
+}
+
+// Hooks live in the body so nothing is fetched until the organiser gate has passed.
+function PrintCredentialsBody() {
   const { data, error } = useData<{ teams: { id: string; name: string; members: string[]; rehearsal: boolean; password: string | null }[] }>("kind=credentials");
   const teams = data?.teams.filter((t) => !t.rehearsal) ?? [];
   const pages: (typeof teams)[] = [];
   for (let i = 0; i < teams.length; i += 10) pages.push(teams.slice(i, i + 10));
   return (
-    <Shell roles={["admin"]} title="Team credential slips" page={`${PRINT_BASE} @page { size: A4 portrait; margin: 0 } .p-sheet { width: 210mm; height: 297mm; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(5, 1fr); }`}>
+    <>
       {error && <Strip tone="error">{error}</Strip>}
       {pages.map((p, i) => (
         <section className="p-sheet" key={i}>
@@ -178,7 +205,7 @@ export function PrintCredentials() {
         </section>
       ))}
       {data && teams.length === 0 && <Strip tone="note">No teams yet. Create or import teams first.</Strip>}
-    </Shell>
+    </>
   );
 }
 
@@ -189,9 +216,18 @@ interface Key {
   tieBreakers: { q: string; a: string }[];
 }
 export function PrintAnswerKey() {
-  const { data, error } = useData<Key>("kind=answer-key");
   return (
     <Shell roles={["admin", "judge"]} title="Answer key" page={`${PRINT_BASE} @page { size: A4 portrait; margin: 12mm } .p-sheet { width: 186mm; min-height: 273mm; padding: 0; }`}>
+      <PrintAnswerKeyBody />
+    </Shell>
+  );
+}
+
+// Hooks live in the body so nothing is fetched until the organiser gate has passed.
+function PrintAnswerKeyBody() {
+  const { data, error } = useData<Key>("kind=answer-key");
+  return (
+    <>
       {error && <Strip tone="error">{error}</Strip>}
       {data && (
         <section className="p-sheet" style={{ padding: "8mm" }}>
@@ -265,7 +301,7 @@ export function PrintAnswerKey() {
           </ol>
         </section>
       )}
-    </Shell>
+    </>
   );
 }
 
@@ -284,6 +320,15 @@ function teamIdFromLocation(): string | null {
   return m?.[1] ?? new URLSearchParams(window.location.search).get("id");
 }
 export function PrintTeamSheets() {
+  return (
+    <Shell roles={["admin", "judge"]} title="Team answer sheets" page={`${PRINT_BASE} @page { size: A4 portrait; margin: 12mm } .p-sheet { width: 186mm; min-height: 270mm; padding: 8mm; box-sizing: border-box; }`}>
+      <PrintTeamSheetsBody />
+    </Shell>
+  );
+}
+
+// Hooks live in the body so nothing is fetched until the organiser gate has passed.
+function PrintTeamSheetsBody() {
   const [ids, setIds] = useState<string[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   useEffect(() => {
@@ -295,10 +340,10 @@ export function PrintTeamSheets() {
     void api<{ teams: { id: string }[] }>("/api/print?kind=teams").then((r) => (r.ok ? setIds(r.teams.map((t) => t.id)) : setErr(r.message)));
   }, []);
   return (
-    <Shell roles={["admin", "judge"]} title="Team answer sheets" page={`${PRINT_BASE} @page { size: A4 portrait; margin: 12mm } .p-sheet { width: 186mm; min-height: 270mm; padding: 8mm; box-sizing: border-box; }`}>
+    <>
       {err && <Strip tone="error">{err}</Strip>}
       {ids?.map((id) => <TeamSheet key={id} id={id} />)}
-    </Shell>
+    </>
   );
 }
 function TeamSheet({ id }: { id: string }) {
@@ -355,9 +400,18 @@ function TeamSheet({ id }: { id: string }) {
 
 // ---------- 6. judge evaluation sheet ----------
 export function PrintJudgeSheet() {
-  const { data, error } = useData<{ rows: { id: string; name: string; status: string; clues: number; final: number; teamworkMarks: number; timeBonus: number; adjustMarks: number; total: number; rank: number | null }[] }>("kind=judge-sheet");
   return (
     <Shell roles={["admin", "judge"]} title="Judge's evaluation sheet" page={`${PRINT_BASE} @page { size: A4 landscape; margin: 12mm } .p-sheet { width: 273mm; padding: 6mm; box-sizing: border-box; }`}>
+      <PrintJudgeSheetBody />
+    </Shell>
+  );
+}
+
+// Hooks live in the body so nothing is fetched until the organiser gate has passed.
+function PrintJudgeSheetBody() {
+  const { data, error } = useData<{ rows: { id: string; name: string; status: string; clues: number; final: number; teamworkMarks: number; timeBonus: number; adjustMarks: number; total: number; rank: number | null }[] }>("kind=judge-sheet");
+  return (
+    <>
       {error && <Strip tone="error">{error}</Strip>}
       {data && (
         <section className="p-sheet">
@@ -399,7 +453,7 @@ export function PrintJudgeSheet() {
           <p style={{ marginTop: "10mm" }}>Judge&apos;s Name: ______________________________ &nbsp;&nbsp; Signature: ______________________________</p>
         </section>
       )}
-    </Shell>
+    </>
   );
 }
 

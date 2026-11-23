@@ -10,13 +10,11 @@ export function FinishPanel({ view }: { view: FView }) {
     <div style={{ background: "var(--color-ink)", color: "var(--color-paper)", minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
       <main className="sheet anim-rise" style={{ flex: 1, paddingTop: 16 }}>
         <div className="t-meta" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ filter: "invert(1)" }}>
-            <Wordmark size="sm" />
-          </span>
+          <Wordmark size="sm" />
           <span>{BRAND.series}</span>
         </div>
         <hr className="rule-2" style={{ borderColor: "var(--color-paper)", margin: "12px 0 24px" }} />
-        <h1 className="t-display" style={{ margin: 0, fontSize: "clamp(44px, 14vw, 64px)" }}>
+        <h1 className="t-display" style={{ margin: 0, fontSize: "clamp(34px, 11.5vw, 60px)" }}>
           Treasure
           <br />
           Claimed

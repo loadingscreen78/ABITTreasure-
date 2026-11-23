@@ -23,6 +23,22 @@ function tokenFromPath(): string | null {
 }
 
 /** The whole team-facing flow. All state comes from the server; nothing secret ships in this bundle. */
+function Hero() {
+  return (
+    <div style={{ paddingTop: 10 }}>
+      <h1 className="t-display" style={{ margin: "0 0 8px" }}>
+        Tech
+        <br />
+        Treasure
+        <br />
+        Hunt
+      </h1>
+      <p style={{ margin: "0 0 16px", fontWeight: 500 }}>Decode • Discover • Win!</p>
+      <hr className="rule-2" style={{ width: 72 }} />
+    </div>
+  );
+}
+
 export default function TeamApp({ mode }: { mode: "scan" | "play" | "finish" }) {
   const [view, setView] = useState<TeamView | null>(null);
   const [skew, setSkew] = useState(0);
@@ -101,9 +117,11 @@ export default function TeamApp({ mode }: { mode: "scan" | "play" | "finish" }) 
 
   let body: React.ReactNode;
   if (!view) {
+    // Static first paint: the brand title is in the prerendered HTML, so the page paints
+    // its largest element before any JS or API call finishes (LCP), and height is reserved (CLS).
     body = (
-      <div style={{ padding: "40px 0" }}>
-        <p className="t-meta anim-blink">{net === "retrying" ? "Weak signal — retrying…" : "Reading checkpoint…"}</p>
+      <div>
+        <p className="t-meta anim-blink" style={{ marginTop: 18 }}>{net === "retrying" ? "Weak signal — retrying…" : "Reading checkpoint…"}</p>
         {net === "offline" && (
           <button className="btn btn-ink" style={{ marginTop: 20 }} onClick={() => void load()}>
             Retry <span aria-hidden>→</span>
@@ -156,6 +174,8 @@ export default function TeamApp({ mode }: { mode: "scan" | "play" | "finish" }) 
           </Strip>
         </div>
       )}
+      {/* One persistent hero node for loading + login: the static HTML paints it first (LCP). */}
+      {(!view || view.kind === "login") && <Hero />}
       {body}
     </TeamShell>
   );

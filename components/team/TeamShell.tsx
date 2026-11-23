@@ -13,16 +13,16 @@ export function TeamShell({ header, skewMs, children, punching }: { header?: Tea
       <div className="t-meta" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 0 10px" }}>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
           <Wordmark size="sm" />
-          <span>CSE · CODE2CAREER</span>
+          <span style={{ whiteSpace: "nowrap" }}>{header ? "CSE · CODE2CAREER" : "CODE2CAREER"}</span>
         </span>
-        {header ? <Timer startedAt={header.startedAt} skewMs={skewMs} /> : <span>TECH TREASURE HUNT</span>}
+        {header ? <Timer startedAt={header.startedAt} skewMs={skewMs} /> : <span style={{ whiteSpace: "nowrap" }}>Treasure hunt</span>}
       </div>
       <hr className="rule-2" />
       {header && (
         <div style={{ padding: "12px 0 4px" }}>
           <div className="t-meta" style={{ marginBottom: 8 }}>
             TEAM {header.id} · {header.name}
-            {header.rehearsal && <span style={{ color: "var(--color-signal-text)" }}> · REHEARSAL</span>}
+            {header.rehearsal && header.name.toLowerCase() !== "rehearsal" && <span style={{ color: "var(--color-signal-text)" }}> · REHEARSAL</span>}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ flex: 1 }}>
@@ -34,7 +34,7 @@ export function TeamShell({ header, skewMs, children, punching }: { header?: Tea
           </div>
         </div>
       )}
-      {children}
+      <div style={{ minHeight: "calc(100dvh - 150px)" }}>{children}</div>
       <Footer />
     </main>
   );

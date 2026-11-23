@@ -101,7 +101,7 @@ button {
   font-variation-settings: "wdth" 125;
   font-weight: 800;
   text-transform: uppercase;
-  font-size: clamp(40px, 13vw, 56px);
+  font-size: clamp(36px, 12vw, 56px);
   line-height: 0.95;
   letter-spacing: -0.01em;
 }

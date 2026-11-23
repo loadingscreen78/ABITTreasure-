@@ -49,9 +49,7 @@ export default function Board() {
   return (
     <div style={{ minHeight: "100dvh", background: bg, color: fg, display: "flex", flexDirection: "column", fontSize: "clamp(14px, 1.3vw, 22px)" }}>
       <header style={{ display: "flex", alignItems: "center", gap: 18, padding: "14px 2.5vw", borderBottom: `2px solid ${fg}` }}>
-        <span style={{ filter: dark ? "invert(1)" : undefined }}>
-          <Wordmark size="md" />
-        </span>
+        <Wordmark size="md" />
         <span className="t-meta" style={{ fontSize: "0.7em" }}>
           {BRAND.instituteFull} · {BRAND.department} · {BRAND.series}
         </span>
@@ -69,6 +67,11 @@ export default function Board() {
       </div>
 
       {error && !data && <p style={{ padding: "0 2.5vw" }}>Reconnecting…</p>}
+      {data && data.rows.length === 0 && (
+        <p className="t-display-sm" style={{ padding: "4vh 2.5vw", fontSize: "clamp(20px, 2.4vw, 40px)" }}>
+          Waiting for teams · {data.event.status === "LIVE" ? "the hunt is live" : "the hunt starts soon"}
+        </p>
+      )}
       {data && data.event.revealed ? <Results rows={data.rows} fg={fg} /> : data && <Progress rows={data.rows} fg={fg} showScores={data.event.showScores} />}
 
       <div style={{ marginTop: "auto" }}>
