@@ -1,0 +1,41 @@
+# secrets — never commit
+.env
+.env*.local
+.dev.vars
+.dev.vars.*
+!.env.example
+
+# hunt content with answers & locations — never commit
+content/hunt.json
+content/answer-cases.json
+teams*.csv
+!content/teams.example.csv
+credentials-*.txt
+
+# deps / build
+node_modules/
+.next/
+.open-next/
+.wrangler/
+out/
+dist/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# test output
+test-results/
+playwright-report/
+playwright/.cache/
+qa/screens/
+qa/pdf/
+
+# supabase cli
+supabase/.branches
+supabase/.temp
+
+# misc
+.DS_Store
+Thumbs.db
+*.log
+*.docx

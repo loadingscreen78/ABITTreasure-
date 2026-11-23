@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "main": ".open-next/worker.js",
+  "name": "abit-hunt",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "abit-hunt" }],
+  "observability": { "enabled": true },
+  // Non-secret runtime vars. Secrets (SUPABASE_SECRET_KEY, SESSION_SECRET) are set
+  // with `npm run cf:secrets`, which reads .env.local and never prints values.
+  "vars": {
+    "BCRYPT_COST": "5"
+  }
+}
