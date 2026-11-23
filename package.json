@@ -23,11 +23,13 @@
     "db:push": "node --env-file=.env.local scripts/db-push.mjs",
     "db:sql": "node scripts/build-sql.mjs",
     "load-test": "node scripts/load-test.mjs",
-    "cf:build": "opennextjs-cloudflare build",
-    "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "cf:secrets": "node scripts/cf-secrets.mjs",
-    "ci": "npm run typecheck && npm run lint && npm run test && npm run check:design && npm run build && npm run check:secrets && npm run check:leaks"
+    "cf:build": "node scripts/cf-build.mjs",
+    "cf:preview": "node scripts/cf-build.mjs && opennextjs-cloudflare preview",
+    "cf:deploy": "node scripts/cf-build.mjs && opennextjs-cloudflare deploy",
+    "cf:secrets": "node --env-file=.env.local scripts/cf-secrets.mjs",
+    "ci": "npm run typecheck && npm run lint && npm run test && npm run check:design && npm run build && npm run check:secrets && npm run check:leaks",
+    "smoke": "node --env-file=.env.local scripts/smoke.mjs",
+    "organisers": "node --env-file=.env.local scripts/create-organisers.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

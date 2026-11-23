@@ -11,6 +11,7 @@ content/answer-cases.json
 teams*.csv
 !content/teams.example.csv
 credentials-*.txt
+organisers-*.txt
 
 # deps / build
 node_modules/
@@ -39,3 +40,4 @@ supabase/.temp
 Thumbs.db
 *.log
 *.docx
+.env.local.cf-build-hidden

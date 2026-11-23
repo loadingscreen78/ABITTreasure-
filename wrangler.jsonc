@@ -10,6 +10,10 @@
   },
   "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "abit-hunt" }],
   "observability": { "enabled": true },
+  // Run the Worker next to the Supabase database (project region: AWS ap-northeast-1, Tokyo).
+  // Each game action makes 1–2 DB round-trips; placing the Worker there turns ~110 ms hops into ~2 ms.
+  // Static assets are still served from the nearest Cloudflare edge. Change if the DB region changes.
+  "placement": { "mode": "targeted", "region": "aws:ap-northeast-1" },
   // Non-secret runtime vars. Secrets (SUPABASE_SECRET_KEY, SESSION_SECRET) are set
   // with `npm run cf:secrets`, which reads .env.local and never prints values.
   "vars": {
