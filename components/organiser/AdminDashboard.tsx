@@ -18,6 +18,8 @@ export interface SnapTeam {
   last_activity_at: string | null;
   wrongCurrent: number;
   hintsUsed: number;
+  wallet: number;
+  hintsBought: number;
   devices: number;
   flags: string[];
   cleared: number;
@@ -165,7 +167,9 @@ function Dashboard() {
               <th>CP</th>
               <th>Arrived</th>
               <th>Wrong now</th>
-              <th>Hints</th>
+              <th>Nudges</th>
+              <th>Wallet</th>
+              <th>Hints bought</th>
               <th>Last activity</th>
               <th>Phones</th>
               <th>Status</th>
@@ -186,6 +190,8 @@ function Dashboard() {
                 <td>{t.arrived ? "yes" : "no"}</td>
                 <td>{t.wrongCurrent}</td>
                 <td>{t.hintsUsed}</td>
+                <td>{t.wallet}</td>
+                <td>{t.hintsBought}</td>
                 <td>{ago(t.last_activity_at, now + skew)}</td>
                 <td>{t.devices}</td>
                 <td>

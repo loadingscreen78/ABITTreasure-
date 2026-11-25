@@ -151,8 +151,19 @@ judge keeps one printed answer key.
 4. **Secret word**: change it from the sample.
 5. **Time limit**: off by default (`timeLimitMinutes = 0`). Set it in `/admin → Settings` if "TIME'S UP" should trigger automatically.
 6. **Domain**: optional short custom domain for the QR URL.
+7. **Paid hint texts**: review the 18 drafted hints (3 per question for Clue 7, 8, 10, 12, 14, 15) in `content/hunt.json`, then run `npm run seed`.
 
-## 7. Design
+## 7. Hint wallet and answer rate limit
+- **Hint wallet** (separate from the 100-mark score): solving each of the first 3 questions (Clue 1, 3, 5) adds **10 points**, so the maximum is 30.
+- Every later question (Clue 7, 8, 10, 12, 14, 15) has 3 paid hints: **LOW 5 · MEDIUM 10 · HIGH 15** points (`settings.hintCosts`).
+  A team sees a hint text only after buying it. The purchase is atomic (`buy_hint()`), so two phones can never overspend, and a hint
+  bought on one phone shows on all of them. Hint texts are drafted in `content/hunt.json` → `questions[].hints`. **TODO(ORGANISER): review them.**
+- **Answer rate limit:** each team gets at most **5 wrong or near-miss tries per 60 seconds**, across all its phones
+  (`settings.answerRateLimit`, `answerRateWindowSeconds`). While a team is over the limit, nothing it submits goes through (so the
+  limit can't be gamed), and the phone shows a countdown. Correct answers never count toward the limit.
+- Admin live ops shows each team's wallet and hints bought; the answer key lists every hint.
+
+## 8. Design
 "Field Dossier": graph-paper case files, punch cards, rubber stamps, mono metadata. Tokens are in `app/globals.css`, the kit is in
 `components/ui`, and the dev-only sheet is at `/dev/kit` (with `npm run dev`). `scripts/check-design.mjs` blocks banned hues,
 gradients, blur, soft corners, banned fonts and emoji.

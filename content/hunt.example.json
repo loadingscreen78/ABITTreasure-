@@ -29,7 +29,14 @@
     "timeBonusMode": "tiered",
     "hintPenalty": 0,
     "loginEveryScan": false,
-    "showScoresOnBoard": false
+    "showScoresOnBoard": false,
+    "hintCosts": {
+      "low": 5,
+      "medium": 10,
+      "high": 15
+    },
+    "answerRateLimit": 5,
+    "answerRateWindowSeconds": 60
   },
   "checkpoints": [
     {
@@ -50,7 +57,8 @@
           "accept": [
             "answer1"
           ],
-          "nearMiss": {}
+          "nearMiss": {},
+          "walletPoints": 10
         }
       ],
       "reveal": {
@@ -83,7 +91,8 @@
           "accept": [
             "answer3"
           ],
-          "nearMiss": {}
+          "nearMiss": {},
+          "walletPoints": 10
         }
       ],
       "reveal": {
@@ -116,7 +125,8 @@
           "accept": [
             "answer5"
           ],
-          "nearMiss": {}
+          "nearMiss": {},
+          "walletPoints": 10
         }
       ],
       "reveal": {
@@ -149,7 +159,22 @@
           "accept": [
             "answer7"
           ],
-          "nearMiss": {}
+          "nearMiss": {},
+          "walletPoints": 0,
+          "hints": [
+            {
+              "level": "low",
+              "text": "Placeholder low hint."
+            },
+            {
+              "level": "medium",
+              "text": "Placeholder medium hint."
+            },
+            {
+              "level": "high",
+              "text": "Placeholder high hint."
+            }
+          ]
         },
         {
           "id": "Q08",
@@ -161,7 +186,22 @@
           "accept": [
             "answer8"
           ],
-          "nearMiss": {}
+          "nearMiss": {},
+          "walletPoints": 0,
+          "hints": [
+            {
+              "level": "low",
+              "text": "Placeholder low hint."
+            },
+            {
+              "level": "medium",
+              "text": "Placeholder medium hint."
+            },
+            {
+              "level": "high",
+              "text": "Placeholder high hint."
+            }
+          ]
         }
       ],
       "reveal": {
@@ -194,7 +234,22 @@
           "accept": [
             "answer10"
           ],
-          "nearMiss": {}
+          "nearMiss": {},
+          "walletPoints": 0,
+          "hints": [
+            {
+              "level": "low",
+              "text": "Placeholder low hint."
+            },
+            {
+              "level": "medium",
+              "text": "Placeholder medium hint."
+            },
+            {
+              "level": "high",
+              "text": "Placeholder high hint."
+            }
+          ]
         }
       ],
       "reveal": {
@@ -227,7 +282,22 @@
           "accept": [
             "{{settings.secretWord}}"
           ],
-          "nearMiss": {}
+          "nearMiss": {},
+          "walletPoints": 0,
+          "hints": [
+            {
+              "level": "low",
+              "text": "Placeholder low hint."
+            },
+            {
+              "level": "medium",
+              "text": "Placeholder medium hint."
+            },
+            {
+              "level": "high",
+              "text": "Placeholder high hint."
+            }
+          ]
         }
       ],
       "reveal": {
@@ -260,7 +330,22 @@
           "accept": [
             "answer14"
           ],
-          "nearMiss": {}
+          "nearMiss": {},
+          "walletPoints": 0,
+          "hints": [
+            {
+              "level": "low",
+              "text": "Placeholder low hint."
+            },
+            {
+              "level": "medium",
+              "text": "Placeholder medium hint."
+            },
+            {
+              "level": "high",
+              "text": "Placeholder high hint."
+            }
+          ]
         }
       ],
       "reveal": {
@@ -290,7 +375,22 @@
             "answer15"
           ],
           "nearMiss": {},
-          "isFinal": true
+          "isFinal": true,
+          "walletPoints": 0,
+          "hints": [
+            {
+              "level": "low",
+              "text": "Placeholder low hint."
+            },
+            {
+              "level": "medium",
+              "text": "Placeholder medium hint."
+            },
+            {
+              "level": "high",
+              "text": "Placeholder high hint."
+            }
+          ]
         }
       ],
       "reveal": null

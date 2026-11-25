@@ -30,12 +30,16 @@ export const formatPassword = (p: string) => (p.length === 7 ? `${p.slice(0, 4)}
 /** Accepts "k7pm-rxq", "K7PM RXQ", "k7pmrxq" → "K7PMRXQ". */
 export const canonicalPassword = (input: string) => input.toUpperCase().replace(/[^A-Z0-9]/g, "");
 
-/** Accepts "t7", "T07", " t 07 " → "T07". Returns null if it is not a team ID. */
+/**
+ * Accepts "t7", "T07", " t 07 ", "T-07" and the very common slip "TO7" (letter O for zero) → "T07".
+ * Returns null if it is not a team ID.
+ */
 export function canonicalTeamId(input: string): string | null {
-  const m = /^T\s*-?\s*(\d{1,3})$/i.exec(input.trim());
-  if (!m) return null;
-  const n = Number(m[1]);
-  return `T${String(n).padStart(2, "0")}`;
+  const s = (input ?? "").trim().toUpperCase();
+  if (!s.startsWith("T")) return null;
+  const digits = s.slice(1).replace(/[\s-]/g, "").replace(/O/g, "0");
+  if (!/^\d{1,3}$/.test(digits)) return null;
+  return `T${String(Number(digits)).padStart(2, "0")}`;
 }
 
 export const teamIdFor = (n: number) => `T${String(n).padStart(2, "0")}`;

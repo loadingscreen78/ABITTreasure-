@@ -16,6 +16,9 @@ export interface Settings {
   loginEveryScan: boolean;
   showScoresOnBoard: boolean;
   timeLimitMinutes: number;
+  hintCosts: { low: number; medium: number; high: number };
+  answerRateLimit: number;
+  answerRateWindowSeconds: number;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -31,6 +34,9 @@ export const DEFAULT_SETTINGS: Settings = {
   loginEveryScan: false,
   showScoresOnBoard: false,
   timeLimitMinutes: 0,
+  hintCosts: { low: 5, medium: 10, high: 15 },
+  answerRateLimit: 5,
+  answerRateWindowSeconds: 60,
 };
 
 export function withDefaults(s: Partial<Settings> | null | undefined): Settings {

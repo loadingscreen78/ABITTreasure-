@@ -13,9 +13,9 @@ export async function nextTeamNumber(db: SupabaseClient): Promise<number> {
 }
 
 /** Creates one team with a fresh password. Returns the password ONCE (also sealed for slip reprints). */
-export async function createTeam(db: SupabaseClient, env: Env, input: { id?: string; name: string; members: string[]; rehearsal?: boolean }) {
+export async function createTeam(db: SupabaseClient, env: Env, input: { id?: string; password?: string; name: string; members: string[]; rehearsal?: boolean }) {
   const id = input.id ?? teamIdFor(await nextTeamNumber(db));
-  const pw = newPassword();
+  const pw = input.password ?? newPassword();
   const row = {
     id,
     name: input.name.slice(0, 60),

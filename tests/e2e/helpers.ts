@@ -29,6 +29,11 @@ export async function resetT00() {
   await c.rpc("reset_team", { p_team_id: "T00" });
 }
 
+/** Move T00's attempts out of the 60 s answer rate-limit window (keeps long UI runs deterministic). */
+export async function ageAttempts() {
+  await db().from("attempts").update({ at: new Date(Date.now() - 180_000).toISOString() }).eq("team_id", "T00");
+}
+
 export async function tokens(): Promise<Record<string, string>> {
   const { data } = await db().from("checkpoints").select("code, token");
   return Object.fromEntries((data ?? []).map((r) => [r.code, r.token]));

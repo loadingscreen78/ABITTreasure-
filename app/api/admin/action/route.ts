@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { newToken, REHEARSAL_TEAM_ID } from "@/lib/game/ids";
+import { canonicalPassword, canonicalTeamId, newToken, REHEARSAL_TEAM_ID } from "@/lib/game/ids";
 import { withDefaults } from "@/lib/game/scoring";
 import { audit, rpc, safe } from "@/lib/server/db";
 import { fail, handler, json, readJson } from "@/lib/server/http";
@@ -29,7 +29,13 @@ const Action = z.discriminatedUnion("type", [
   z.object({ type: z.literal("settings"), patch: SettingsPatch }),
   z.object({ type: z.literal("checkpoint"), code: z.string().regex(/^CP-\d{2}$/), venueDetail: z.string().max(200).optional(), location: z.string().max(120).optional() }),
   z.object({ type: z.literal("rotate_token"), code: z.string().regex(/^CP-\d{2}$/) }),
-  z.object({ type: z.literal("team_create"), name: z.string().trim().min(1).max(60), members: z.array(z.string().max(60)).max(4) }),
+  z.object({
+    type: z.literal("team_create"),
+    name: z.string().trim().min(1).max(60),
+    members: z.array(z.string().max(60)).max(4),
+    id: z.string().trim().max(8).optional(),
+    password: z.string().trim().max(20).optional().or(z.literal("")),
+  }),
   z.object({ type: z.literal("team_update"), id: Id, name: z.string().trim().min(1).max(60), members: z.array(z.string().max(60)).max(4) }),
   z.object({ type: z.literal("team_delete"), id: Id }),
   z.object({ type: z.literal("team_reset_password"), id: Id }),
@@ -100,8 +106,13 @@ export const POST = handler("admin/action", async (req: Request) => {
       return u.error ? err("Could not rotate the token.") : done();
     }
     case "team_create": {
-      const c = await createTeam(db, env, { name: a.name, members: a.members.filter(Boolean) });
-      if (!c.ok) return err("Could not create the team.");
+      const customId = a.id ? canonicalTeamId(a.id) : null;
+      if (a.id && !customId) return fail("BAD_INPUT", `"${a.id}" isn't a Team ID. Use T + number, e.g. T01 (zero, not the letter O).`, 400);
+      const pw = a.password ? canonicalPassword(a.password) : "";
+      if (a.password && (pw.length < 6 || pw.length > 12)) return fail("BAD_INPUT", "Password needs 6–12 letters or digits (symbols are ignored).", 400);
+      if (customId === REHEARSAL_TEAM_ID) return fail("BAD_INPUT", "T00 is reserved for rehearsal.", 400);
+      const c = await createTeam(db, env, { id: customId ?? undefined, password: pw || undefined, name: a.name, members: a.members.filter(Boolean) });
+      if (!c.ok) return fail("FAILED", /duplicate|unique/i.test(c.error) ? `Team ID ${customId} already exists — pick another or leave it blank.` : "Could not create the team.", 409);
       return done({ id: c.id }, { id: c.id, password: c.password });
     }
     case "team_update": {

@@ -23,8 +23,8 @@ async function setup(): Promise<PGlite> {
   }
   for (const q of questions) {
     await db.query(
-      `insert into questions (id, checkpoint_code, position, clue, title, prompt, code, match, accept, near_miss, is_final) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
-      [q.id, q.checkpoint_code, q.position, q.clue, q.title, q.prompt, q.code, q.match, JSON.stringify(q.accept), JSON.stringify(q.near_miss), q.is_final],
+      `insert into questions (id, checkpoint_code, position, clue, title, prompt, code, match, accept, near_miss, is_final, wallet_points, hints) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+      [q.id, q.checkpoint_code, q.position, q.clue, q.title, q.prompt, q.code, q.match, JSON.stringify(q.accept), JSON.stringify(q.near_miss), q.is_final, q.wallet_points, JSON.stringify(q.hints)],
     );
   }
   await db.query(`update event_state set settings = $1, status = 'LIVE', started_at = now() - interval '1 minute' where id = 1`, [
@@ -65,6 +65,8 @@ describe("game moves in Postgres", () => {
     expect(Object.keys(m).filter((k) => k.startsWith("clue:"))).toHaveLength(15);
     expect(clue).toBe(75);
     expect(m.final).toBe(15);
+    const w = (await db.query<{ w: number }>(`select coalesce(sum(points),0)::int w from wallet_entries where team_id='T01'`)).rows[0]!.w;
+    expect(w).toBe(30);
     const t = (await db.query<{ status: string; judge_code: string; finished_at: string }>(`select * from teams where id='T01'`)).rows[0]!;
     expect(t.status).toBe("FINISHED");
     expect(t.judge_code).toMatch(/^\d{4}$/);
@@ -114,7 +116,7 @@ describe("game moves in Postgres", () => {
   it("near-misses never count as attempts", async () => {
     await arrive(db, "T01", "CP-01");
     const q = qIds[0]![0]!;
-    for (let i = 0; i < 5; i++) expect((await attempt(db, "T01", q, false, { near: true })).outcome).toBe("NEAR_MISS");
+    for (let i = 0; i < 3; i++) expect((await attempt(db, "T01", q, false, { near: true })).outcome).toBe("NEAR_MISS");
     expect(await attempt(db, "T01", q, true)).toMatchObject({ outcome: "CORRECT", marks: 5, attemptNo: 1 });
   });
 
@@ -205,15 +207,96 @@ describe("game moves in Postgres", () => {
   });
 });
 
+describe("hint wallet + answer rate limit", () => {
+  let db: PGlite;
+  beforeEach(async () => {
+    db = await setup();
+  });
+  const wallet = async (team: string) =>
+    (await db.query<{ w: number }>(`select coalesce(sum(points),0)::int w from wallet_entries where team_id=$1`, [team])).rows[0]!.w;
+  const buy = (team: string, q: string, level: string) => one(db, `select buy_hint($1,$2,$3) r`, [team, q, level]);
+  async function reachCp4(team: string) {
+    for (let i = 0; i < 3; i++) {
+      await arrive(db, team, hunt.checkpoints[i]!.code);
+      for (const q of qIds[i]!) await attempt(db, team, q, true);
+    }
+    await arrive(db, team, "CP-04");
+  }
+
+  it("the first 3 questions each add 10 to the wallet (once); later ones add nothing", async () => {
+    await arrive(db, "T01", "CP-01");
+    await attempt(db, "T01", qIds[0]![0]!, true);
+    expect(await wallet("T01")).toBe(10);
+    await reachCp4("T02");
+    expect(await wallet("T02")).toBe(30);
+    await attempt(db, "T02", qIds[3]![0]!, true);
+    expect(await wallet("T02")).toBe(30);
+  });
+
+  it("hints cost 5 / 10 / 15, are paid once, and the wallet never goes negative", async () => {
+    await reachCp4("T01");
+    const q = qIds[3]![0]!;
+    const low = await buy("T01", q, "low");
+    expect(low).toMatchObject({ ok: true, already: false, cost: 5, balance: 25 });
+    expect(String(low.text)).toContain("Placeholder low hint");
+    expect(await buy("T01", q, "low")).toMatchObject({ ok: true, already: true, balance: 25 });
+    expect(await buy("T01", q, "high")).toMatchObject({ ok: true, cost: 15, balance: 10 });
+    expect(await buy("T01", q, "medium")).toMatchObject({ ok: true, cost: 10, balance: 0 });
+    await attempt(db, "T01", q, true);
+    expect(await buy("T01", qIds[3]![1]!, "low")).toMatchObject({ ok: false, reason: "INSUFFICIENT", balance: 0, cost: 5 });
+    expect(await wallet("T01")).toBe(0);
+  });
+
+  it("two phones buying at the same time never spend more than the balance", async () => {
+    await reachCp4("T01");
+    await db.query(`delete from wallet_entries where team_id='T01' and ref <> 'earn:Q01'`); // balance 10
+    const q = qIds[3]![0]!;
+    const [a, b] = await Promise.all([buy("T01", q, "medium"), buy("T01", q, "high")]);
+    expect([a.ok, b.ok].filter(Boolean)).toHaveLength(1);
+    expect(await wallet("T01")).toBeGreaterThanOrEqual(0);
+  });
+
+  it("hints are only for the current question, and the first 3 questions have none", async () => {
+    await arrive(db, "T01", "CP-01");
+    expect((await buy("T01", qIds[0]![0]!, "low")).reason).toBe("NO_HINT");
+    expect((await buy("T01", qIds[3]![0]!, "low")).reason).toBe("NOT_CURRENT");
+    expect((await buy("T01", qIds[0]![0]!, "ultra")).reason).toBe("NO_HINT");
+  });
+
+  it("rate limit: the 6th try within a minute is refused; correct answers never count", async () => {
+    await db.query(`update event_state set settings = settings || '{"cooldownSecondsAfterLimit":0}'`);
+    await arrive(db, "T01", "CP-01");
+    const q = qIds[0]![0]!;
+    for (let i = 0; i < 4; i++) expect((await attempt(db, "T01", q, false)).outcome).toBe("WRONG");
+    expect((await attempt(db, "T01", q, false, { near: true })).outcome).toBe("NEAR_MISS");
+    const blocked = await attempt(db, "T01", q, true);
+    expect(blocked.reason).toBe("RATE_LIMIT");
+    expect(blocked.retryAt).toBeTruthy();
+    await db.query(`update attempts set at = at - interval '2 minutes' where team_id='T01'`);
+    expect((await attempt(db, "T01", q, true)).outcome).toBe("CORRECT");
+    await db.query(`update event_state set settings = settings || '{"answerRateLimit":1}'`);
+    await arrive(db, "T01", "CP-02");
+    expect((await attempt(db, "T01", qIds[1]![0]!, true)).outcome).toBe("CORRECT");
+  });
+
+  it("reset_team clears the wallet", async () => {
+    await arrive(db, "T01", "CP-01");
+    await attempt(db, "T01", qIds[0]![0]!, true);
+    await db.query(`select reset_team('T01')`);
+    expect(await wallet("T01")).toBe(0);
+  });
+});
+
 describe("RLS lockdown (anon / authenticated roles)", () => {
   it("cannot select from any table or call any function", async () => {
     const db = await setup();
-    const tables = ["event_state", "checkpoints", "questions", "teams", "arrivals", "attempts", "score_entries", "scan_logs", "hint_uses", "audit_logs", "login_throttle"];
+    const tables = ["event_state", "checkpoints", "questions", "teams", "arrivals", "attempts", "score_entries", "scan_logs", "hint_uses", "audit_logs", "login_throttle", "wallet_entries"];
     for (const role of ["anon", "authenticated"]) {
       await db.query(`set role ${role}`);
       for (const t of tables) await expect(db.query(`select * from public.${t}`), `${role} ${t}`).rejects.toThrow(/permission denied/);
       await expect(db.query(`select public.team_context('T01')`)).rejects.toThrow(/permission denied/);
       await expect(db.query(`select public.arrive('T01','CP-01',0)`)).rejects.toThrow(/permission denied/);
+      await expect(db.query(`select public.buy_hint('T01','Q07','low')`)).rejects.toThrow(/permission denied/);
       await db.query(`reset role`);
     }
   });

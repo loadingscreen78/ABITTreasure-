@@ -32,6 +32,9 @@ export function TeamShell({ header, skewMs, children, punching }: { header?: Tea
               CP {String(header.current).padStart(2, "0")}/{String(header.total).padStart(2, "0")}
             </span>
           </div>
+          <div className="t-meta tabular" style={{ marginTop: 8, color: "var(--color-graphite)" }}>
+            Hint wallet · {header.wallet} pts
+          </div>
         </div>
       )}
       <div style={{ minHeight: "calc(100dvh - 150px)" }}>{children}</div>

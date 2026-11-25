@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { answerFor, hasSecrets, hunt, resetT00, secretWord, shot, T00_PASSWORD, tokens } from "./helpers";
+import { ageAttempts, answerFor, hasSecrets, hunt, resetT00, secretWord, shot, T00_PASSWORD, tokens } from "./helpers";
 
 test.skip(!hasSecrets, "needs .env.local + content/hunt.json");
 test.use({ reducedMotion: "reduce" });
@@ -40,6 +40,7 @@ test("full T00 run CP-01 → CP-08: every reveal is the exact Section 3 riddle",
       }
       if (cp.order === 2) {
         // 4 wrong answers → 0 marks for this clue + cooldown
+        await ageAttempts();
         for (let k = 1; k <= 4; k++) {
           await answer(page, `wrong${k}`);
           await expect(page.getByText(/INCORRECT/)).toBeVisible();
@@ -64,6 +65,16 @@ test("full T00 run CP-01 → CP-08: every reveal is the exact Section 3 riddle",
         await ctxB.close();
         await page.goto(`/s/${tok[cp.code]}`);
       }
+      if (q.id === "Q07") {
+        // paid hint from the wallet (30 points after the first 3 questions)
+        await expect(page.getByLabel("Hint wallet 30 points")).toBeVisible();
+        await page.getByRole("button", { name: /Low hint, 5 points/ }).click();
+        await page.getByRole("button", { name: /Confirm: spend 5 points/ }).click();
+        await expect(page.getByLabel("Hint wallet 25 points")).toBeVisible();
+        await expect(page.getByText("Low hint", { exact: true })).toBeVisible();
+        await shot(page, "07-hint-bought", info.project.name);
+      }
+      await ageAttempts();
       await answer(page, answerFor(q, secret));
       if (q.clue === 15) {
         await expect(page.getByText("Claimed")).toBeVisible();

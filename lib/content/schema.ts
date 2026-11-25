@@ -12,6 +12,10 @@ export const QuestionSchema = z.object({
   accept: z.array(z.string().min(1)).min(1),
   nearMiss: z.record(z.string(), z.string()),
   isFinal: z.boolean().optional(),
+  /** Hint-wallet points earned when this question is solved (first 3 questions: 10). */
+  walletPoints: z.number().int().min(0).max(100).optional(),
+  /** Paid hints (bought with wallet points). Never sent to a phone unless bought. */
+  hints: z.array(z.object({ level: z.enum(["low", "medium", "high"]), text: z.string().min(1) })).optional(),
 });
 
 export const RevealSchema = z.object({

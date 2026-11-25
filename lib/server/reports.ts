@@ -14,6 +14,8 @@ interface QRow {
   code: string | null;
   match: string;
   accept: string[];
+  hints?: { level: string; text: string }[];
+  wallet_points?: number;
 }
 interface CRow {
   code: string;
@@ -27,7 +29,7 @@ interface CRow {
 async function content(db: SupabaseClient) {
   const [c, q] = await Promise.all([
     safe(db.from("checkpoints").select("code, ord, location, venue_detail, arrival_credit, reveal").order("ord"), "content cps"),
-    safe(db.from("questions").select("id, checkpoint_code, position, clue, title, prompt, code, match, accept").order("clue"), "content qs"),
+    safe(db.from("questions").select("id, checkpoint_code, position, clue, title, prompt, code, match, accept, hints, wallet_points").order("clue"), "content qs"),
   ]);
   if (c.error || q.error) return null;
   return { cps: c.data as CRow[], qs: q.data as QRow[] };
@@ -37,13 +39,13 @@ async function content(db: SupabaseClient) {
 export async function answerKey(db: SupabaseClient, secretWord: string) {
   const ct = await content(db);
   if (!ct) return null;
-  const rows: { clue: number; kind: "question" | "location"; title: string; answer: string; cp: string; where: string }[] = [];
+  const rows: { clue: number; kind: "question" | "location"; title: string; answer: string; cp: string; where: string; hints?: string[]; wallet?: number }[] = [];
   for (const cp of ct.cps) {
     if (cp.arrival_credit)
       rows.push({ clue: cp.arrival_credit.clue, kind: "location", title: cp.arrival_credit.title, answer: cp.arrival_credit.answer, cp: cp.code, where: cp.location });
     for (const q of ct.qs.filter((x) => x.checkpoint_code === cp.code)) {
       const answer = q.match === "secret-word" ? secretWord : q.accept.map((a) => (q.match === "html-tag" && a.length === 1 ? `<${a}>` : a.toUpperCase())).slice(0, 3).join(" / ");
-      rows.push({ clue: q.clue, kind: "question", title: q.title, answer, cp: cp.code, where: cp.location });
+      rows.push({ clue: q.clue, kind: "question", title: q.title, answer, cp: cp.code, where: cp.location, hints: (q.hints ?? []).map((h) => `${h.level.toUpperCase()}: ${h.text}`), wallet: q.wallet_points ?? 0 });
     }
   }
   rows.sort((a, b) => a.clue - b.clue);

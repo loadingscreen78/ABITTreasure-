@@ -29,6 +29,8 @@ export interface SnapTeam {
   wrongCurrent: number;
   wrongTotal: number;
   hintsUsed: number;
+  wallet: number;
+  hintsBought: number;
   outOfOrder: number;
   devices: number;
   arrivals: Record<string, string>;

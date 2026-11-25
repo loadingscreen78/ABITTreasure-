@@ -47,6 +47,8 @@ interface QRow {
   accept: string[];
   nearMiss: Record<string, string>;
   isFinal: boolean;
+  walletPoints?: number;
+  hints?: { level: "low" | "medium" | "high"; text: string }[];
 }
 
 export interface TeamCtx {
@@ -59,6 +61,8 @@ export interface TeamCtx {
   solved: string[];
   scores: Record<string, number>;
   hints: number[];
+  wallet?: number;
+  purchases?: string[];
   now: string;
 }
 
@@ -95,6 +99,7 @@ function header(ctx: TeamCtx): TeamHeader {
     startedAt: startOf(ctx),
     serverNow: new Date().toISOString(),
     rehearsal: t.is_rehearsal,
+    wallet: Number(ctx.wallet ?? 0),
   };
 }
 
@@ -151,6 +156,10 @@ export function buildView(ctx: TeamCtx, banner: Banner = null): TeamView {
         cooldownUntil: t.cooldown_until && new Date(t.cooldown_until).getTime() > Date.now() ? t.cooldown_until : null,
         cooldownSeconds: s.cooldownSecondsAfterLimit,
         isFinal: q.isFinal,
+        hints: (q.hints ?? []).map((hh) => {
+          const bought = (ctx.purchases ?? []).includes(`hint:${q.id}:${hh.level}`);
+          return { level: hh.level, cost: s.hintCosts[hh.level] ?? 0, bought, text: bought ? hh.text : null };
+        }),
       },
     };
   }
@@ -262,7 +271,7 @@ export async function submit(
       if (d.outcome === "CORRECT") {
         const marks = Number(d.marks ?? 0);
         const scores = { ...ctx.scores, [`clue:${String(q.clue).padStart(2, "0")}`]: marks };
-        const next = { ...ctx, team, scores, solved: [...ctx.solved, q.id], wrongCount: 0 };
+        const next = { ...ctx, team, scores, solved: [...ctx.solved, q.id], wrongCount: 0, wallet: Number(ctx.wallet ?? 0) + Number(d.replay ? 0 : (d.walletEarned ?? 0)) };
         return { result: { outcome: "CORRECT", marks, attemptNo: Number(d.attemptNo) }, view: buildView(next) };
       }
       if (d.outcome === "NEAR_MISS") {
@@ -280,6 +289,9 @@ export async function submit(
         },
         view: buildView(next),
       };
+    }
+    if (d.reason === "RATE_LIMIT") {
+      return { result: { outcome: "RATE_LIMIT", retryAt: (d.retryAt as string) ?? null }, view };
     }
     if (d.reason === "COOLDOWN") {
       return { result: { outcome: "COOLDOWN", cooldownUntil: d.cooldownUntil as string }, view };
@@ -306,6 +318,30 @@ export async function hint(db: SupabaseClient, ctx: TeamCtx, clue: number): Prom
   const prev = ctx.checkpoints.find((c) => c.order === ctx.team.unlocked_cp - 1);
   await rpc(db, "use_hint", { p_team_id: ctx.team.id, p_clue: clue });
   return prev?.reveal?.nudge ?? null;
+}
+
+/** Buy a paid hint for the current question from the team's wallet (atomic in buy_hint()). */
+export async function buyHint(
+  db: SupabaseClient,
+  ctx: TeamCtx,
+  questionId: string,
+  level: "low" | "medium" | "high",
+): Promise<{ ok: true; view: TeamView; text: string } | { ok: false; code: string; message: string; view: TeamView }> {
+  const r = await rpc<{ ok: boolean; reason?: string; text?: string; balance?: number; cost?: number }>(db, "buy_hint", {
+    p_team_id: ctx.team.id,
+    p_question_id: questionId,
+    p_level: level,
+  });
+  if (r.error !== null) return { ok: false, code: "NETWORK", message: "Weak signal — try again.", view: buildView(ctx) };
+  const d = r.data;
+  if (d.ok && d.text) {
+    const purchases = [...new Set([...(ctx.purchases ?? []), `hint:${questionId}:${level}`])];
+    return { ok: true, text: d.text, view: buildView({ ...ctx, wallet: Number(d.balance ?? 0), purchases }) };
+  }
+  if (d.reason === "INSUFFICIENT")
+    return { ok: false, code: "INSUFFICIENT", message: `Not enough hint points — this hint costs ${d.cost}, you have ${d.balance}.`, view: buildView(ctx) };
+  if (d.reason === "NOT_CURRENT") return { ok: false, code: "NOT_CURRENT", message: "That question is already behind you.", view: buildView(ctx) };
+  return { ok: false, code: d.reason ?? "FAILED", message: "No hint available for this question.", view: buildView(ctx) };
 }
 
 export async function cpOrderForToken(db: SupabaseClient, token: string): Promise<number | null> {

@@ -25,6 +25,8 @@ export function huntToRows(hunt: Hunt, tokens: Record<string, string>) {
       accept: q.accept,
       near_miss: q.nearMiss,
       is_final: q.isFinal ?? false,
+      wallet_points: q.walletPoints ?? 0,
+      hints: q.hints ?? [],
     })),
   );
   return { checkpoints, questions };

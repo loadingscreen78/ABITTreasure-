@@ -41,3 +41,4 @@ Thumbs.db
 *.log
 *.docx
 .env.local.cf-build-hidden
+qa/qr/

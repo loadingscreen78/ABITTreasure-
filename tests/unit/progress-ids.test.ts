@@ -53,6 +53,9 @@ describe("ids", () => {
     [" t 07 ", "T07"],
     ["T-12", "T12"],
     ["t00", "T00"],
+    ["TO1", "T01"],
+    ["to7", "T07"],
+    ["T 1O", "T10"],
   ])("team id %j → %j", (i, o) => expect(canonicalTeamId(i)).toBe(o));
   it("rejects non-team ids", () => expect(canonicalTeamId("admin")).toBeNull());
 });

@@ -53,6 +53,8 @@ async function main() {
   await db.from("teams").update({ password_hash: await bcrypt.hash(pw, 5), session_version: (t?.session_version ?? 1) + 1 }).eq("id", "T00");
   await db.rpc("reset_team", { p_team_id: "T00" });
 
+  // Age T00's past attempts out of the 60 s answer rate-limit window (test helper only).
+  const ageAttempts = () => db.from("attempts").update({ at: new Date(Date.now() - 180_000).toISOString() }).eq("team_id", "T00");
   const A = jar();
   const B = jar();
 
@@ -93,10 +95,42 @@ async function main() {
         ok(replay.data?.result?.attemptNo === 1, "Q01: retried submit with same idempotency key is not counted twice");
       }
       if (q.id === "Q03") {
+        await ageAttempts();
         for (let k = 1; k <= 4; k++) await A("/api/team/submit", { questionId: q.id, answer: `wrong${k}`, idemKey: `smoke-q3-${k}` });
         const s = await A("/api/team/submit", { questionId: q.id, answer: answers[q.id], idemKey: "smoke-q3-ok" });
         ok(s.data?.result?.outcome === "COOLDOWN", "Q03: after 4 wrong answers a cooldown blocks submits");
         await db.from("teams").update({ cooldown_until: null }).eq("id", "T00");
+      }
+      if (q.id === "Q05") {
+        // answer rate limit: 5 wrong/near-miss tries per minute, then every submit is refused
+        await ageAttempts();
+        for (let k = 1; k <= 5; k++) await A("/api/team/submit", { questionId: q.id, answer: "c++", idemKey: `smoke-rl-${k}` });
+        const rl = await A("/api/team/submit", { questionId: q.id, answer: answers[q.id], idemKey: "smoke-rl-6" });
+        ok(rl.data?.result?.outcome === "RATE_LIMIT" && !!rl.data.result.retryAt, "rate limit: 6th try within a minute is refused (even a correct one)");
+        await ageAttempts();
+      }
+      if (q.id === "Q07") {
+        let st = await A("/api/team/state");
+        ok(st.data?.view?.header?.wallet === 30, `hint wallet = 30 after the first 3 questions — got ${st.data?.view?.header?.wallet}`);
+        ok(st.data.view.question.hints.length === 3 && st.data.view.question.hints.every((h) => h.text === null), "unbought hint texts are never sent to the phone");
+        const low = await A("/api/team/buy-hint", { questionId: q.id, level: "low" });
+        ok(low.data?.text === q.hints.find((h) => h.level === "low").text && low.data.view.header.wallet === 25, "buy LOW hint: −5, text matches");
+        const again = await B("/api/team/buy-hint", { questionId: q.id, level: "low" });
+        ok(again.data?.view?.header?.wallet === 25, "buying the same hint again (other phone) is free");
+        const high = await A("/api/team/buy-hint", { questionId: q.id, level: "high" });
+        ok(high.data?.view?.header?.wallet === 10, "buy HIGH hint: −15");
+        const med = await A("/api/team/buy-hint", { questionId: q.id, level: "medium" });
+        ok(med.data?.view?.header?.wallet === 0, "buy MEDIUM hint: −10 → wallet 0");
+        st = await A("/api/team/state");
+        ok(st.data.view.question.hints.every((h) => h.bought && h.text), "bought hints stay visible on every refresh");
+      }
+      if (q.id === "Q08") {
+        const poor = await A("/api/team/buy-hint", { questionId: q.id, level: "low" });
+        ok(poor.status === 409 && poor.data?.code === "INSUFFICIENT", "can't buy with an empty wallet");
+      }
+      if (q.id === "Q01") {
+        const none = await A("/api/team/buy-hint", { questionId: q.id, level: "low" });
+        ok(none.status === 409, "first 3 questions have no paid hints");
       }
       const idem = `smoke-${q.id}-ok`;
       const s = await (i === 2 ? B : A)("/api/team/submit", { questionId: q.id, answer: answers[q.id], idemKey: idem });

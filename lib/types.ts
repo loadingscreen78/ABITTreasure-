@@ -12,6 +12,8 @@ export interface TeamHeader {
   startedAt: string | null;
   serverNow: string;
   rehearsal: boolean;
+  /** Hint-wallet balance (separate from the 100-mark score). */
+  wallet: number;
 }
 
 export interface QuestionView {
@@ -27,7 +29,11 @@ export interface QuestionView {
   cooldownUntil: string | null;
   cooldownSeconds: number;
   isFinal: boolean;
+  /** Paid hints for this question. `text` is only present once the team has bought it. */
+  hints: { level: HintLevel; cost: number; bought: boolean; text: string | null }[];
 }
+
+export type HintLevel = "low" | "medium" | "high";
 
 export interface ClueView {
   clue: number | null;
@@ -56,13 +62,14 @@ export type TeamView =
   | { kind: "finished"; header: TeamHeader; finishedAt: string | null; elapsedMs: number | null; judgeCode: string | null; phrase: string | null };
 
 export interface SubmitResult {
-  outcome: "CORRECT" | "WRONG" | "NEAR_MISS" | "COOLDOWN" | "ALREADY_SOLVED" | "STALE" | "EMPTY" | "BLOCKED";
+  outcome: "CORRECT" | "WRONG" | "NEAR_MISS" | "COOLDOWN" | "ALREADY_SOLVED" | "STALE" | "EMPTY" | "BLOCKED" | "RATE_LIMIT";
   marks?: number;
   attemptNo?: number;
   attemptsLeft?: number;
   scoring?: boolean;
   cooldownUntil?: string | null;
   message?: string;
+  retryAt?: string | null;
 }
 
 export type ApiResult<T> = ({ ok: true } & T) | { ok: false; code: string; message: string; view?: TeamView };

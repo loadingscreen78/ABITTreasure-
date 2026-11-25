@@ -211,7 +211,7 @@ function PrintCredentialsBody() {
 
 // ---------- 4. answer key (confidential) ----------
 interface Key {
-  rows: { clue: number; kind: string; title: string; answer: string; cp: string; where: string }[];
+  rows: { clue: number; kind: string; title: string; answer: string; cp: string; where: string; hints?: string[]; wallet?: number }[];
   route: { code: string; order: number; location: string; venueDetail: string | null; riddle: string | null; nudge: string | null }[];
   tieBreakers: { q: string; a: string }[];
 }
@@ -258,6 +258,12 @@ function PrintAnswerKeyBody() {
                   <td>{r.title}</td>
                   <td>
                     <strong>{r.answer}</strong>
+                    {!!r.wallet && <div style={{ color: "#55534E" }}>+{r.wallet} hint-wallet pts when solved</div>}
+                    {r.hints?.map((h) => (
+                      <div key={h} style={{ color: "#55534E" }}>
+                        {h}
+                      </div>
+                    ))}
                   </td>
                   <td>
                     {r.cp} · {r.where}

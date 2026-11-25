@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import jsQR from "jsqr";
 import { PNG } from "pngjs";
-import { hasSecrets, organiser, secretWord, shot, tokens } from "./helpers";
+import { db, hasSecrets, organiser, secretWord, shot, tokens } from "./helpers";
 
 const admin = organiser("admin");
 const judge = organiser("judge");
@@ -57,6 +57,27 @@ test("judge can open the finish desk and answer key; admin pages refuse the judg
   await expect(page.getByText("Confidential — organisers only")).toBeVisible();
   await page.goto("/admin");
   await expect(page.getByText(/This page needs admin/)).toBeVisible();
+});
+
+test("admin adds a team with a typed ID + password (letter O tolerated) and it can log in", async ({ page, request }) => {
+  await db().from("teams").delete().eq("id", "T98");
+  await signIn(page, admin!, "/admin/teams");
+  await page.getByLabel("Team name").first().fill("QA Custom");
+  await page.getByLabel("Team ID (optional)").fill("TO98");
+  await page.getByLabel("Password (optional)").fill("RYAN@1908");
+  await page.getByLabel("Member 1").first().fill("Tester");
+  await page.getByRole("button", { name: "Create team" }).click();
+  await expect(page.getByText("New credentials — shown once")).toBeVisible();
+  await expect(page.getByRole("cell", { name: "T98", exact: true }).first()).toBeVisible();
+  for (const pw of ["RYAN@1908", "ryan1908"]) {
+    const r = await request.post("/api/team/login", { data: { teamId: "to98", password: pw } });
+    expect((await r.json()).ok, pw).toBe(true);
+  }
+  await page.getByLabel("Team ID (optional)").fill("T98");
+  await page.getByLabel("Team name").first().fill("Dup");
+  await page.getByRole("button", { name: "Create team" }).click();
+  await expect(page.getByText(/already exists/)).toBeVisible();
+  await db().from("teams").delete().eq("id", "T98");
 });
 
 test("board renders publicly without scores", async ({ page }, info) => {

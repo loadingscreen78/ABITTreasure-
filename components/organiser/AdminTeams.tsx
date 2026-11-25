@@ -24,6 +24,8 @@ function Teams() {
   const [msg, setMsg] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const [creds, setCreds] = useState<{ id: string; name: string; password: string }[]>([]);
   const [name, setName] = useState("");
+  const [customId, setCustomId] = useState("");
+  const [customPw, setCustomPw] = useState("");
   const [members, setMembers] = useState(["", "", "", ""]);
   const [csv, setCsv] = useState("");
   const [progress, setProgress] = useState<string | null>(null);
@@ -37,10 +39,12 @@ function Teams() {
   };
 
   const create = async () => {
-    const r = (await run({ type: "team_create", name, members: members.filter(Boolean) }, `Team "${name}" created.`)) as { ok: boolean; id?: string; password?: string };
+    const r = (await run({ type: "team_create", name, members: members.filter(Boolean), id: customId, password: customPw }, `Team "${name}" created.`)) as { ok: boolean; id?: string; password?: string };
     if (r.ok && r.id && r.password) {
       setCreds((c) => [...c, { id: r.id!, name, password: r.password! }]);
       setName("");
+      setCustomId("");
+      setCustomPw("");
       setMembers(["", "", "", ""]);
     }
   };
@@ -107,6 +111,10 @@ function Teams() {
           <h2 className="t-display-sm">Add a team</h2>
           <div style={{ display: "grid", gap: 8 }}>
             <input className="input-box" placeholder="Team name" value={name} onChange={(e) => setName(e.target.value)} aria-label="Team name" />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <input className="input-box" placeholder="Team ID, e.g. T01 (blank = auto)" value={customId} onChange={(e) => setCustomId(e.target.value.toUpperCase())} aria-label="Team ID (optional)" maxLength={4} />
+              <input className="input-box" placeholder="Password, 6–12 chars (blank = auto)" value={customPw} onChange={(e) => setCustomPw(e.target.value.toUpperCase())} aria-label="Password (optional)" maxLength={12} />
+            </div>
             {members.map((m, i) => (
               <input key={i} className="input-box" placeholder={`Member ${i + 1}${i >= 3 ? " (optional)" : ""}`} value={m} onChange={(e) => setMembers(members.map((x, j) => (j === i ? e.target.value : x)))} aria-label={`Member ${i + 1}`} />
             ))}

@@ -30,6 +30,7 @@ for (const cp of hunt.checkpoints) {
   for (const q of cp.questions) {
     for (const a of q.accept) if (!a.startsWith("{{")) add(a);
     for (const m of Object.values(q.nearMiss)) add(m);
+    for (const h of q.hints ?? []) add(h.text);
     add(q.prompt);
   }
 }

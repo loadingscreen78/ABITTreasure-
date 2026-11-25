@@ -6,6 +6,7 @@ import { Countdown, useNow } from "@/components/ui/live";
 import { api, newIdemKey, vibrate } from "@/lib/client/api";
 import type { SubmitResult, TeamView } from "@/lib/types";
 import { BannerStrip } from "./Banner";
+import { HintShop } from "./HintShop";
 import type { Flash } from "./TeamApp";
 
 type QView = Extract<TeamView, { kind: "question" }>;
@@ -50,7 +51,9 @@ export function QuestionPanel({
     }
   }, [answer, q.id]);
 
-  const cooling = q.cooldownUntil && new Date(q.cooldownUntil).getTime() > now + skewMs ? q.cooldownUntil : null;
+  const [limitedUntil, setLimitedUntil] = useState<string | null>(null);
+  const rateLimited = limitedUntil && new Date(limitedUntil).getTime() > now + skewMs ? limitedUntil : null;
+  const cooling = q.cooldownUntil && new Date(q.cooldownUntil).getTime() > now + skewMs ? q.cooldownUntil : rateLimited;
   const scoringLeft = q.wrongCount < q.fullWithin;
   const recentFlash = flash && now - flash.at < 6000 ? flash : null;
 
@@ -106,6 +109,10 @@ export function QuestionPanel({
         setFeedback({ tone: "error", text: "Locked for a moment.", until: res.cooldownUntil ?? null });
         onView(r.view);
         return;
+      case "RATE_LIMIT":
+        setLimitedUntil(res.retryAt ?? null);
+        setFeedback({ tone: "error", text: "Too many tries — your team gets 5 tries a minute. Take a breath and think.", until: res.retryAt ?? null });
+        return;
       case "EMPTY":
         setFeedback({ tone: "note", text: "Type an answer first." });
         return;
@@ -145,6 +152,8 @@ export function QuestionPanel({
           )}
         </QuestionCard>
       </div>
+
+      <HintShop q={q} wallet={view.header.wallet} onView={onView} />
 
       <form onSubmit={submit} style={{ marginTop: 26 }} noValidate>
         <label className="t-meta field-label" htmlFor="answer">
