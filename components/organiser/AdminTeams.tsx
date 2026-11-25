@@ -1,7 +1,9 @@
 "use client";
 import { useState } from "react";
 import { Strip } from "@/components/ui/kit";
-import { parseTeamsCsv } from "@/lib/csv";
+import { parseTeamsCsv, toCsv } from "@/lib/csv";
+import { readXlsx } from "@/lib/xlsx";
+import { RegistrationsPanel } from "./Registrations";
 import { OrgHeader, OrganiserGate } from "./OrganiserGate";
 import { MiniPunch, type Snap } from "./AdminDashboard";
 import { act, usePoll } from "./useOrgData";
@@ -106,6 +108,8 @@ function Teams() {
         </section>
       )}
 
+      <RegistrationsPanel onCreds={(c) => setCreds((x) => [...x, ...c])} onChanged={() => void mutate()} />
+
       <div className="grid-2">
         <section className="panel">
           <h2 className="t-display-sm">Add a team</h2>
@@ -124,15 +128,31 @@ function Teams() {
           </div>
         </section>
         <section className="panel">
-          <h2 className="t-display-sm">Bulk CSV import</h2>
+          <h2 className="t-display-sm">Bulk import (Excel or CSV)</h2>
           <p style={{ margin: "0 0 8px" }}>
             Columns: <code>name,member1,member2,member3,member4</code>. IDs (T01, T02…) and passwords are generated. Team names and member names only — no phone numbers or emails.
           </p>
           <textarea className="input-box" rows={6} value={csv} onChange={(e) => setCsv(e.target.value)} placeholder={"name,member1,member2,member3,member4\nByte Bandits,Asha,Ravi,Sneha,"} aria-label="CSV" />
           <div className="btn-row" style={{ marginTop: 8 }}>
             <label className="btn btn-paper btn-sm" style={{ cursor: "pointer" }}>
-              Choose file
-              <input type="file" accept=".csv,text/csv" hidden onChange={async (e) => setCsv((await e.target.files?.[0]?.text()) ?? "")} />
+              Choose .xlsx / .csv
+              <input
+                type="file"
+                accept=".csv,text/csv,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                hidden
+                onChange={async (e) => {
+                  const f = e.target.files?.[0];
+                  e.target.value = "";
+                  if (!f) return;
+                  try {
+                    if (/\.xlsx$/i.test(f.name)) setCsv(toCsv(await readXlsx(await f.arrayBuffer())).replace(/\r\n$/, ""));
+                    else setCsv(await f.text());
+                    setMsg({ tone: "ok", text: `Loaded ${f.name} — check the rows, then press Import.` });
+                  } catch (x) {
+                    setMsg({ tone: "error", text: x instanceof Error ? x.message : "Could not read that file." });
+                  }
+                }}
+              />
             </label>
             <button className="btn btn-ink btn-sm" disabled={!csv.trim() || !!progress} onClick={() => void importCsv()}>
               {progress ?? "Import"}

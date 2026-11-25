@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import jsQR from "jsqr";
 import { PNG } from "pngjs";
+import { readXlsx } from "../../lib/xlsx";
 import { db, hasSecrets, organiser, secretWord, shot, tokens } from "./helpers";
 
 const admin = organiser("admin");
@@ -78,6 +79,59 @@ test("admin adds a team with a typed ID + password (letter O tolerated) and it c
   await page.getByRole("button", { name: "Create team" }).click();
   await expect(page.getByText(/already exists/)).toBeVisible();
   await db().from("teams").delete().eq("id", "T98");
+});
+
+test("student registers on the animated home page → admin downloads Excel → creates the team → it can log in", async ({ page, browser }, info) => {
+  const name = `QA Reg ${Date.now().toString(36).slice(-5)}`;
+  // student side (phone)
+  const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  const p = await phone.newPage();
+  await p.goto("/");
+  await expect(p.getByRole("heading", { name: "Tech Treasure Hunt" })).toBeVisible();
+  await p.waitForTimeout(3500); // let the welcome sequence finish
+  await shot(p, "home-welcome", info.project.name);
+  await p.getByLabel("Team name").fill(name);
+  await p.getByLabel("Member 1", { exact: true }).fill("Asha");
+  await p.getByLabel("Member 2", { exact: true }).fill("Ravi");
+  await p.getByRole("button", { name: /Register team/ }).click();
+  await expect(p.getByText("Teams need 3–4 members")).toBeVisible();
+  await p.getByLabel("Member 3", { exact: true }).fill("Sneha");
+  await p.getByRole("checkbox").check();
+  await p.getByRole("button", { name: /Register team/ }).click();
+  await expect(p.getByText("Your reference")).toBeVisible();
+  await expect(p.getByText(/^R-[A-Z0-9]{5}$/)).toBeVisible();
+  await shot(p, "home-registered", info.project.name);
+  // duplicate name is refused
+  await p.getByRole("button", { name: /Register another team/ }).click();
+  await p.getByLabel("Team name").fill(name.toUpperCase());
+  for (const [i, m] of ["A", "B", "C"].entries()) await p.getByLabel(`Member ${i + 1}`, { exact: true }).fill(m);
+  await p.getByRole("checkbox").check();
+  await p.getByRole("button", { name: /Register team/ }).click();
+  await expect(p.getByText(/already registered/)).toBeVisible();
+  await phone.close();
+
+  // admin side
+  await signIn(page, admin!, "/admin/teams");
+  await expect(page.getByRole("heading", { name: "Student registrations" })).toBeVisible();
+  await expect(page.getByRole("cell", { name }).first()).toBeVisible();
+  const xl = await page.request.get("/api/admin/registrations?format=xlsx&status=pending");
+  expect(xl.headers()["content-type"]).toContain("spreadsheetml");
+  const rows = await readXlsx(await xl.body());
+  expect(rows[0]!.slice(0, 5)).toEqual(["name", "member1", "member2", "member3", "member4"]);
+  expect(rows.find((r) => r[0] === name)?.slice(1, 4)).toEqual(["Asha", "Ravi", "Sneha"]);
+
+  const row = page.getByRole("row", { name: new RegExp(name) });
+  await row.getByRole("button", { name: "Create team" }).click();
+  await expect(page.getByText(new RegExp(`"${name}" is now team T\\d+`))).toBeVisible();
+  const { data: reg } = await db().from("registrations").select("team_id, status").eq("team_name", name).single();
+  expect(reg?.status).toBe("IMPORTED");
+  const pwCell = page.getByRole("row", { name: new RegExp(`${reg!.team_id}.*${name}`) }).getByRole("cell").nth(2);
+  const pw = (await pwCell.textContent())!.trim();
+  const login = await page.request.post("/api/team/login", { data: { teamId: reg!.team_id, password: pw } });
+  expect((await login.json()).ok).toBe(true);
+
+  await db().from("registrations").delete().eq("team_name", name);
+  await db().from("teams").delete().eq("id", reg!.team_id!);
 });
 
 test("board renders publicly without scores", async ({ page }, info) => {

@@ -21,6 +21,7 @@ const SettingsPatch = z
     loginEveryScan: z.boolean(),
     showScoresOnBoard: z.boolean(),
     timeLimitMinutes: z.number().int().min(0).max(240),
+    registrationOpen: z.boolean(),
   })
   .partial();
 
@@ -47,6 +48,9 @@ const Action = z.discriminatedUnion("type", [
   z.object({ type: z.literal("rehearsal_create") }),
   z.object({ type: z.literal("rehearsal_reset") }),
   z.object({ type: z.literal("reset_all"), confirm: z.literal("RESET") }),
+  z.object({ type: z.literal("reg_import"), id: z.number().int().positive() }),
+  z.object({ type: z.literal("reg_reject"), id: z.number().int().positive() }),
+  z.object({ type: z.literal("reg_restore"), id: z.number().int().positive() }),
 ]);
 
 export const POST = handler("admin/action", async (req: Request) => {
@@ -170,6 +174,25 @@ export const POST = handler("admin/action", async (req: Request) => {
     case "rehearsal_reset": {
       const u = await rpc(db, "reset_team", { p_team_id: REHEARSAL_TEAM_ID });
       return u.error ? err("Could not reset T00.") : done();
+    }
+    case "reg_import": {
+      // One registration → one team per request (keeps each Worker call inside the free-plan CPU budget).
+      const reg = await safe(db.from("registrations").select("id, team_name, members, status").eq("id", a.id).single(), "reg read");
+      if (reg.error || !reg.data) return fail("NOT_FOUND", "Registration not found.", 404);
+      const g = reg.data as { id: number; team_name: string; members: string[]; status: string };
+      if (g.status !== "PENDING") return fail("DONE", `"${g.team_name}" was already handled.`, 409);
+      const c = await createTeam(db, env, { name: g.team_name, members: g.members });
+      if (!c.ok) return err(`Could not create a team for "${g.team_name}".`);
+      await safe(db.from("registrations").update({ status: "IMPORTED", team_id: c.id }).eq("id", g.id).select("id"), "reg mark");
+      return done({ id: c.id, reg: g.id }, { id: c.id, name: g.team_name, password: c.password });
+    }
+    case "reg_reject":
+    case "reg_restore": {
+      const u = await safe(
+        db.from("registrations").update({ status: a.type === "reg_reject" ? "REJECTED" : "PENDING" }).eq("id", a.id).neq("status", "IMPORTED").select("id"),
+        "reg status",
+      );
+      return u.error ? err("Could not update the registration (is the name now taken?).") : done();
     }
     case "reset_all": {
       const u = await rpc(db, "reset_all");

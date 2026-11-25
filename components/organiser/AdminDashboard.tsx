@@ -46,7 +46,7 @@ export interface Snap {
     started_at: string | null;
     ends_at: string | null;
     results_revealed: boolean;
-    settings: Record<string, unknown> & { secretWord: string; loginEveryScan: boolean; showScoresOnBoard: boolean; timeBonusMode: string; fullMarksWithinAttempts: number; cooldownSecondsAfterLimit: number; hintPenalty: number; timeLimitMinutes: number };
+    settings: Record<string, unknown> & { secretWord: string; registrationOpen?: boolean; loginEveryScan: boolean; showScoresOnBoard: boolean; timeBonusMode: string; fullMarksWithinAttempts: number; cooldownSecondsAfterLimit: number; hintPenalty: number; timeLimitMinutes: number };
   };
   checkpoints: { code: string; order: number; token: string; location: string; venueDetail: string | null; url: string }[];
   teams: SnapTeam[];
@@ -276,6 +276,9 @@ function SettingsPanel({ snap, run }: { snap: Snap; onSaved: () => void; run: Ru
             </button>
           </div>
         </div>
+        <label style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <input type="checkbox" checked={s.registrationOpen !== false} onChange={(e) => toggle("registrationOpen", e.target.checked, "Registration")} /> Team registration open on the home page
+        </label>
         <label style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <input type="checkbox" checked={s.loginEveryScan} onChange={(e) => toggle("loginEveryScan", e.target.checked, "Login every scan")} /> Force login on every scan
         </label>

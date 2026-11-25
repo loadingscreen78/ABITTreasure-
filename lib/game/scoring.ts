@@ -19,6 +19,7 @@ export interface Settings {
   hintCosts: { low: number; medium: number; high: number };
   answerRateLimit: number;
   answerRateWindowSeconds: number;
+  registrationOpen: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -37,6 +38,7 @@ export const DEFAULT_SETTINGS: Settings = {
   hintCosts: { low: 5, medium: 10, high: 15 },
   answerRateLimit: 5,
   answerRateWindowSeconds: 60,
+  registrationOpen: true,
 };
 
 export function withDefaults(s: Partial<Settings> | null | undefined): Settings {

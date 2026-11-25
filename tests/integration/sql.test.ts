@@ -290,7 +290,7 @@ describe("hint wallet + answer rate limit", () => {
 describe("RLS lockdown (anon / authenticated roles)", () => {
   it("cannot select from any table or call any function", async () => {
     const db = await setup();
-    const tables = ["event_state", "checkpoints", "questions", "teams", "arrivals", "attempts", "score_entries", "scan_logs", "hint_uses", "audit_logs", "login_throttle", "wallet_entries"];
+    const tables = ["event_state", "checkpoints", "questions", "teams", "arrivals", "attempts", "score_entries", "scan_logs", "hint_uses", "audit_logs", "login_throttle", "wallet_entries", "registrations"];
     for (const role of ["anon", "authenticated"]) {
       await db.query(`set role ${role}`);
       for (const t of tables) await expect(db.query(`select * from public.${t}`), `${role} ${t}`).rejects.toThrow(/permission denied/);

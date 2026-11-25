@@ -578,3 +578,209 @@ button {
   display: grid;
   place-items: center;
 }
+
+/* ============ home: animated case-file welcome ============ */
+.home-wrap {
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 20px 40px;
+  box-sizing: border-box;
+}
+.home-grid {
+  display: grid;
+  gap: 28px;
+}
+@media (min-width: 920px) {
+  .home-grid {
+    grid-template-columns: 1.15fr 0.85fr;
+    align-items: start;
+  }
+  .home-sticky {
+    position: sticky;
+    top: 20px;
+  }
+}
+.boot {
+  background: var(--color-ink);
+  color: var(--color-paper);
+  border: var(--rule);
+  box-shadow: var(--signal-shadow);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  padding: 12px 14px;
+  overflow: hidden;
+}
+.boot-line {
+  position: relative;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  line-height: 1.75;
+}
+.boot-line .ok {
+  color: var(--color-tape);
+}
+/* typing reveal: an ink shutter slides off the line in steps */
+.boot-line::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--color-ink);
+  transform-origin: right;
+  animation: boot-type 520ms steps(18, end) both;
+  animation-delay: calc(var(--d, 0) * 1ms);
+}
+@keyframes boot-type {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+.boot-cursor {
+  display: inline-block;
+  width: 8px;
+  height: 13px;
+  background: var(--color-signal);
+  vertical-align: -2px;
+  animation: blink 1s steps(2) infinite;
+}
+
+.h-title {
+  position: relative;
+}
+.h-letter {
+  display: inline-block;
+  opacity: 0;
+  animation: letter-in 260ms var(--ease-dossier) both;
+  animation-delay: calc(350ms + var(--i, 0) * 42ms);
+}
+@keyframes letter-in {
+  0% { opacity: 0; transform: translateY(-28%) scale(1.35); }
+  70% { opacity: 1; transform: translateY(3%) scale(0.98); }
+  100% { opacity: 1; transform: none; }
+}
+.h-stamp {
+  position: absolute;
+  right: 0;
+  top: 6px;
+  opacity: 0;
+  animation: stamp-in 240ms var(--ease-dossier) both;
+  animation-delay: 1.35s;
+}
+.h-fade {
+  opacity: 0;
+  animation: rise 360ms var(--ease-dossier) both;
+  animation-delay: calc(var(--d, 0) * 1ms);
+}
+
+/* route map */
+.route-card {
+  position: relative;
+  overflow: hidden;
+}
+.route-seg {
+  opacity: 0;
+  animation: seg-in 220ms var(--ease-dossier) both;
+  animation-delay: calc(1500ms + var(--i, 0) * 170ms);
+}
+@keyframes seg-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.route-pin {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pin-pop 260ms var(--ease-dossier) both;
+  animation-delay: calc(1420ms + var(--i, 0) * 170ms);
+}
+@keyframes pin-pop {
+  0% { opacity: 0; transform: scale(0.2); }
+  70% { opacity: 1; transform: scale(1.18); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.route-scan {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -30%;
+  width: 22%;
+  background: color-mix(in srgb, var(--color-signal) 9%, transparent);
+  border-right: 1.5px solid color-mix(in srgb, var(--color-signal) 55%, transparent);
+  animation: scan 4.6s linear infinite;
+  animation-delay: 3s;
+  pointer-events: none;
+  opacity: 0;
+}
+@keyframes scan {
+  0% { opacity: 1; transform: translateX(0); }
+  100% { opacity: 1; transform: translateX(620%); }
+}
+
+/* home punch card: punches 1..8 in sequence */
+.hp-slot {
+  position: relative;
+  height: 28px;
+  border: 1.5px solid var(--color-ink);
+  background: var(--color-card);
+  overflow: hidden;
+}
+.hp-slot::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--color-ink);
+  transform: scaleY(0);
+  transform-origin: bottom;
+  animation: hp-fill 200ms var(--ease-dossier) both;
+  animation-delay: calc(2200ms + var(--i, 0) * 140ms);
+}
+.hp-slot::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  background: var(--color-paper);
+  opacity: 0;
+  animation: hp-hole 160ms var(--ease-dossier) both;
+  animation-delay: calc(2320ms + var(--i, 0) * 140ms);
+}
+.hp-notch {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 7px;
+  height: 7px;
+  background: var(--color-signal);
+  opacity: 0;
+  z-index: 1;
+  animation: hp-hole 160ms var(--ease-dossier) both;
+  animation-delay: calc(2360ms + var(--i, 0) * 140ms);
+}
+@keyframes hp-fill {
+  to { transform: scaleY(1); }
+}
+@keyframes hp-hole {
+  to { opacity: 1; }
+}
+
+.stat-n {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 75;
+  font-weight: 800;
+  font-size: 46px;
+  line-height: 0.9;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-wrap *,
+  .home-wrap *::before,
+  .home-wrap *::after {
+    animation-delay: 0s !important;
+  }
+  .route-scan { display: none; }
+}
