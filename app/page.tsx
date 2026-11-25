@@ -2,46 +2,69 @@ import Link from "next/link";
 import { Footer, Marquee, Wordmark } from "@/components/ui/brand";
 import { IconArrow, IconCamera, IconLock, IconPin, RoughFilter } from "@/components/ui/icons";
 import { RegisterForm } from "@/components/home/RegisterForm";
+import { Seal, RouteMap } from "@/components/home/art";
+import { Cipher, IntroCover, LiveStatus, Reveal, Scramble, SplitFlap } from "@/components/home/fx";
 import { BRAND } from "@/lib/brand";
 
-// Static, prerendered welcome. Every animation is CSS (transform / opacity only) and
-// becomes an instant swap with prefers-reduced-motion.
+// Static, prerendered welcome. Motion is CSS + native SVG animation with a few tiny client islands.
+// Everything becomes an instant swap under prefers-reduced-motion. No clues or answers on this page.
 
-const BOOT: [string, string, number][] = [
-  ["> ESTABLISHING FIELD LINK", "OK", 0],
-  ["> CASE FILE TTH · CODE2CAREER", "OPEN", 260],
-  ["> 8 CHECKPOINTS · 15 CLUES · 100 MARKS", "LOADED", 520],
-  ["> CLEARANCE · 2ND-YEAR · TEAMS OF 3–4", "GRANTED", 780],
+const TICK =
+  "Case file TTH  •  Classified  •  8 checkpoints  •  15 clues  •  100 marks  •  2nd-year teams of 3–4  •  ABIT Cuttack  •  Code2Career  •  ";
+
+// Runs before first paint: skip the cover on repeat visits in this session / for reduced motion.
+// (Injects a <style> rather than touching <html>, so React hydration stays clean.)
+const PRE = `try{if(sessionStorage.getItem('tth-intro')||matchMedia('(prefers-reduced-motion: reduce)').matches){window.__tthSeen=1;document.head.insertAdjacentHTML('beforeend','<style id="tth-seen">.cover{display:none!important}.stage{animation-delay:calc(var(--d,0)*1ms)!important}.hero-watermark,.seal{animation-delay:.3s!important}</style>')}}catch(e){}`;
+
+const STEPS: [string, string, string][] = [
+  ["Enlist", "Register your team below. On the day, collect your Team ID + password slip at the registration desk.", "-2deg"],
+  ["Scan", "Point your phone camera at the CP—01 QR card at the desk and log in. Every phone in the team can join.", "1.5deg"],
+  ["Decode", "Crack each checkpoint's question. A correct answer decrypts a riddle that points to the next place.", "-1deg"],
+  ["Claim", "Eight checkpoints later, say the final phrase to the judge. The fastest perfect team takes the bonus.", "2deg"],
 ];
 
-// Abstract route (positions are decorative — real locations stay classified).
-const PINS: [number, number][] = [
-  [46, 150],
-  [92, 62],
-  [168, 38],
-  [248, 64],
-  [282, 136],
-  [214, 172],
-  [140, 120],
-  [64, 176],
-];
-
-function Letters({ text, start }: { text: string; start: number }) {
+function SecHead({ no, title, kicker }: { no: string; title: string; kicker: string }) {
   return (
-    <>
-      {Array.from(text).map((ch, i) => (
-        <span key={i} className="h-letter" style={{ ["--i" as string]: start + i }} aria-hidden>
-          {ch}
-        </span>
-      ))}
-    </>
+    <div className="sec-head">
+      <span className="sec-no" aria-hidden>
+        {no}
+      </span>
+      <div>
+        <div className="t-meta" style={{ color: "var(--color-graphite)" }}>
+          {kicker}
+        </div>
+        <h2 className="t-display-sm" style={{ margin: "4px 0 0", fontSize: "clamp(24px, 6vw, 36px)" }}>
+          {title}
+        </h2>
+      </div>
+    </div>
   );
 }
 
 export default function Home() {
   return (
     <>
+      <script dangerouslySetInnerHTML={{ __html: PRE }} />
       <RoughFilter />
+      <IntroCover />
+      <div className="scroll-bar" aria-hidden />
+      <div className="ticker" aria-hidden>
+        <span className="ticker-track">
+          {TICK.split("•").map((part, i, a) => (
+            <span key={i}>
+              {part}
+              {i < a.length - 1 && <b>•</b>}
+            </span>
+          ))}
+          {TICK.split("•").map((part, i, a) => (
+            <span key={`b${i}`}>
+              {part}
+              {i < a.length - 1 && <b>•</b>}
+            </span>
+          ))}
+        </span>
+      </div>
+
       <main className="home-wrap">
         <div className="t-meta" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "14px 0 10px" }}>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
@@ -54,94 +77,102 @@ export default function Home() {
         </div>
         <hr className="rule-2" />
 
-        <div className="home-grid" style={{ marginTop: 18 }}>
-          {/* ---------- left: the case file ---------- */}
-          <div>
-            <div className="boot" role="presentation" aria-hidden>
-              {BOOT.map(([l, ok, d]) => (
-                <span key={l} className="boot-line" style={{ ["--d" as string]: d }}>
-                  {l} <span className="ok">· {ok}</span>
-                </span>
-              ))}
-              <span className="boot-line" style={{ ["--d" as string]: 1040 }}>
-                {">"} <span className="boot-cursor" />
+        {/* ---------------- HERO ---------------- */}
+        <section className="hero">
+          <div className="hero-watermark" aria-hidden>
+            08
+          </div>
+          <Seal />
+          <p className="t-meta stage" style={{ ["--d" as string]: 0, margin: "0 0 18px", maxWidth: "62%" }}>
+            File no. TTH · {BRAND.department} · Clearance: 2nd year
+          </p>
+          <h1 className="hero-title" aria-label="Tech Treasure Hunt">
+            <span className="w stage" style={{ ["--d" as string]: 60 }}>
+              <Scramble text="TECH" delay={1950} />
+            </span>
+            <span className="w w2 stage" style={{ ["--d" as string]: 160 }}>
+              <span className="hl">
+                <Scramble text="TREASURE" delay={2100} />
+              </span>
+            </span>
+            <span className="w stage" style={{ ["--d" as string]: 260 }}>
+              <Scramble text="HUNT" delay={2250} />
+            </span>
+          </h1>
+
+          <div className="stage" style={{ ["--d" as string]: 380, marginTop: 22 }}>
+            <SplitFlap words={["DECODE", "DISCOVER", "WIN!"]} />
+          </div>
+          <div className="stage" style={{ ["--d" as string]: 480, marginTop: 18 }}>
+            <LiveStatus />
+          </div>
+          <div className="cta-row stage" style={{ ["--d" as string]: 580, marginTop: 24 }}>
+            <a className="btn btn-ink" href="#register">
+              Register your team <span aria-hidden>↓</span>
+            </a>
+            <Link className="btn btn-paper" href="/play">
+              Continue my hunt <IconArrow />
+            </Link>
+          </div>
+          <a className="scroll-cue t-meta stage" href="#route" style={{ ["--d" as string]: 760, marginTop: 22, textDecoration: "none" }}>
+            Open the file <i aria-hidden>↓</i>
+          </a>
+        </section>
+
+        {/* ---------------- 01 ROUTE ---------------- */}
+        <section id="route" style={{ marginTop: 20 }}>
+          <SecHead no="01" kicker="Field map · route TTH" title="Eight stops. One loop." />
+          <Reveal className="card" style={{ padding: 0, overflow: "hidden" }} r="0deg" r0="-1deg">
+            <div className="t-meta" style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", borderBottom: "1.5px solid var(--color-ink)" }}>
+              <span>Live route</span>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "var(--color-signal-text)" }}>
+                <IconLock size={12} /> Locations classified
               </span>
             </div>
+            <RouteMap />
+          </Reveal>
+          <p style={{ margin: "12px 0 0", color: "var(--color-graphite)" }}>
+            Every checkpoint hides a printed QR card. Scan it, answer, and the next location decrypts on your phone — only for your team, only in order.
+          </p>
+        </section>
 
-            <div className="h-title" style={{ marginTop: 22 }}>
-              <h1 className="t-display" style={{ margin: 0, fontSize: "clamp(40px, 12.5vw, 84px)" }} aria-label="Tech Treasure Hunt">
-                <Letters text="TECH" start={0} />
-                <br />
-                <Letters text="TREASURE" start={4} />
-                <br />
-                <Letters text="HUNT" start={12} />
-              </h1>
-              <span className="h-stamp" aria-hidden>
-                <span className="stamp stamp-verified" style={{ fontSize: "clamp(14px, 3.6vw, 22px)", background: "color-mix(in srgb, var(--color-card) 70%, transparent)" }}>
-                  Case file open
-                </span>
-              </span>
-            </div>
-            <p className="h-fade" style={{ ["--d" as string]: 1150, margin: "12px 0 0", fontSize: 20, fontWeight: 500 }}>
-              {BRAND.tagline}
-            </p>
-            <p className="t-meta h-fade" style={{ ["--d" as string]: 1250, margin: "8px 0 0", color: "var(--color-graphite)" }}>
-              {BRAND.department} · {BRAND.instituteFull}
-            </p>
+        {/* ---------------- 02 CIPHER ---------------- */}
+        <section style={{ marginTop: 44 }}>
+          <SecHead no="02" kicker="Training exercise" title="Crack the cipher" />
+          <Reveal className="card" style={{ padding: 16 }} r="0deg" r0="1deg">
+            <Cipher />
+          </Reveal>
+          <p className="t-meta" style={{ margin: "10px 0 0", color: "var(--color-graphite)" }}>
+            Warm-up only. The real clues unlock on the day.
+          </p>
+        </section>
 
-            {/* route map */}
-            <section className="card route-card h-fade" style={{ ["--d" as string]: 1350, marginTop: 24, padding: 0 }} aria-label="The route: eight checkpoints, locations classified">
-              <div className="t-meta" style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", borderBottom: "1.5px solid var(--color-ink)" }}>
-                <span>Field map · route TTH</span>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "var(--color-signal-text)" }}>
-                  <IconLock size={12} /> Locations classified
-                </span>
-              </div>
-              <div style={{ position: "relative" }}>
-                <svg viewBox="0 0 320 210" width="100%" role="img" aria-label="Eight numbered checkpoints on a loop that starts and ends at the registration desk" style={{ display: "block" }}>
-                  {PINS.slice(0, -1).map(([x, y], i) => {
-                    const [x2, y2] = PINS[i + 1]!;
-                    return <line key={i} className="route-seg" style={{ ["--i" as string]: i }} x1={x} y1={y} x2={x2} y2={y2} stroke="#121212" strokeWidth="2" strokeDasharray="5 5" />;
-                  })}
-                  {PINS.map(([x, y], i) => (
-                    <g key={i} className="route-pin" style={{ ["--i" as string]: i }}>
-                      <rect x={x - 11} y={y - 11} width="22" height="22" fill={i === 0 || i === 7 ? "#FF5A1F" : "#121212"} stroke="#121212" strokeWidth="1.5" />
-                      <text x={x} y={y + 4} textAnchor="middle" fontSize="11" fontFamily="var(--font-mono)" fontWeight="600" fill={i === 0 || i === 7 ? "#121212" : "#F2EDE3"}>
-                        {String(i + 1).padStart(2, "0")}
-                      </text>
-                    </g>
-                  ))}
-                  <text x="12" y="202" fontSize="9" fontFamily="var(--font-mono)" fill="#55534E" letterSpacing="1">
-                    START + FINISH · REGISTRATION DESK
-                  </text>
-                </svg>
-                <span className="route-scan" aria-hidden />
-              </div>
-            </section>
-
-            {/* punch card */}
-            <div className="h-fade" style={{ ["--d" as string]: 2050, marginTop: 22 }}>
-              <div className="t-meta" style={{ marginBottom: 8 }}>
-                Your punch card · one hole per checkpoint
-              </div>
-              <div className="punch" aria-hidden>
-                {Array.from({ length: 8 }, (_, i) => (
-                  <span key={i} className="hp-slot" style={{ ["--i" as string]: i }}>
-                    <span className="hp-notch" style={{ ["--i" as string]: i }} />
+        {/* ---------------- 03 INSTRUCTIONS ---------------- */}
+        <section style={{ marginTop: 44 }}>
+          <SecHead no="03" kicker="Read before deployment" title="Field instructions" />
+          <div className="evidence-grid">
+            {STEPS.map(([t, s, r], i) => (
+              <Reveal key={t} className="evidence" r={r} r0={i % 2 ? "6deg" : "-6deg"} d={i * 90}>
+                <span className="pin" aria-hidden />
+                <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
+                  <span className="no">{String(i + 1).padStart(2, "0")}</span>
+                  <span className="t-display-sm" style={{ fontSize: 22 }}>
+                    {t}
                   </span>
-                ))}
-              </div>
-            </div>
-
-            {/* stats */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginTop: 24 }}>
+                </div>
+                <p style={{ margin: "10px 0 0" }}>{s}</p>
+              </Reveal>
+            ))}
+          </div>
+          <Reveal style={{ marginTop: 26 }} d={100}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
               {[
                 ["08", "Checkpoints"],
                 ["15", "Clues"],
                 ["~20", "Minutes"],
                 ["3–4", "Per team"],
-              ].map(([n, l], i) => (
-                <div key={l} className="h-fade" style={{ ["--d" as string]: 2600 + i * 90, borderTop: "2px solid var(--color-ink)", paddingTop: 8 }}>
+              ].map(([n, l]) => (
+                <div key={l} style={{ borderTop: "2px solid var(--color-ink)", paddingTop: 8 }}>
                   <div className="stat-n">{n}</div>
                   <div className="t-meta" style={{ marginTop: 4 }}>
                     {l}
@@ -149,49 +180,40 @@ export default function Home() {
                 </div>
               ))}
             </div>
+          </Reveal>
+        </section>
 
-            {/* field instructions */}
-            <section className="card h-fade" style={{ ["--d" as string]: 2950, marginTop: 26, padding: 16, position: "relative" }}>
-              <span className="tape t-meta" style={{ position: "absolute", top: -12, left: 14 }}>
-                Field instructions
-              </span>
-              <ol style={{ margin: "8px 0 0", padding: 0, listStyle: "none", display: "grid", gap: 10 }}>
-                {[
-                  "Register your team below, then collect your Team ID + password slip at the registration desk.",
-                  "On the day, scan the CP—01 QR at the desk with your phone camera and log in.",
-                  "Solve each checkpoint's question. A correct answer decrypts the riddle to the next place.",
-                  "Eight checkpoints later, say the final phrase to the judge. Fastest perfect team wins the bonus.",
-                ].map((s, i) => (
-                  <li key={i} style={{ display: "grid", gridTemplateColumns: "34px 1fr", gap: 6 }}>
-                    <span className="t-mono" style={{ fontWeight: 600 }}>
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                    <span>{s}</span>
-                  </li>
-                ))}
-              </ol>
-            </section>
-          </div>
-
-          {/* ---------- right: registration ---------- */}
-          <div className="home-sticky h-fade" style={{ ["--d" as string]: 900 }} id="register">
-            <RegisterForm />
-            <div style={{ display: "grid", gap: 14, marginTop: 22 }}>
-              <Link className="btn btn-paper" href="/play">
-                Already playing? Continue my hunt <IconArrow />
-              </Link>
-              <Link className="btn btn-paper" href="/rules">
-                Read the rules <IconArrow />
-              </Link>
-            </div>
-            <p className="t-meta" style={{ margin: "16px 0 0", display: "flex", gap: 8, alignItems: "center" }}>
+        {/* ---------------- 04 REGISTER ---------------- */}
+        <section id="register" className="home-split" style={{ marginTop: 48, scrollMarginTop: 16 }}>
+          <div>
+            <SecHead no="04" kicker="Teams of 3–4 · 2nd year" title="Enlist your team" />
+            <p style={{ margin: "0 0 12px" }}>File your team now. The organisers turn every registration into a Team ID and password, printed on a slip you collect at the registration desk.</p>
+            <ul style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 6 }}>
+              <li>Only team and member names are collected.</li>
+              <li>Keep your reference number — show it at the desk.</li>
+              <li>
+                Read the{" "}
+                <Link href="/rules" style={{ fontWeight: 600 }}>
+                  rules
+                </Link>{" "}
+                together before the day.
+              </li>
+            </ul>
+            <p className="t-meta" style={{ margin: "18px 0 0", display: "flex", gap: 8, alignItems: "center" }}>
               <IconCamera size={14} /> Every checkpoint has a printed QR card.
             </p>
             <p className="t-meta" style={{ margin: "8px 0 0", display: "flex", gap: 8, alignItems: "center", color: "var(--color-graphite)" }}>
               <IconPin size={14} /> {BRAND.address}
             </p>
           </div>
-        </div>
+          <div>
+            <RegisterForm />
+            <Link className="btn btn-paper" href="/rules" style={{ marginTop: 18 }}>
+              Read the rules <IconArrow />
+            </Link>
+          </div>
+        </section>
+
         <Footer />
       </main>
       <Marquee />
