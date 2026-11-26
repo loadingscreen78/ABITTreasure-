@@ -104,7 +104,7 @@ test("student registers on the animated home page → admin downloads Excel → 
   await p.getByLabel("Member 3", { exact: true }).fill("Sneha");
   await p.getByRole("checkbox").check();
   await p.getByRole("button", { name: /Register team/ }).click();
-  await expect(p.getByText("Your reference")).toBeVisible();
+  await expect(p.getByText("Your reference", { exact: true })).toBeVisible();
   await expect(p.getByText(/^R-[A-Z0-9]{5}$/)).toBeVisible();
   await shot(p, "home-registered", info.project.name);
   // duplicate name is refused

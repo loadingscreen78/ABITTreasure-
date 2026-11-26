@@ -39,6 +39,12 @@ export async function tokens(): Promise<Record<string, string>> {
   return Object.fromEntries((data ?? []).map((r) => [r.code, r.token]));
 }
 
+export async function gameSettings(): Promise<{ full: number; cooldown: number }> {
+  const { data } = await db().from("event_state").select("settings").eq("id", 1).single();
+  const s = (data?.settings ?? {}) as { fullMarksWithinAttempts?: number; cooldownSecondsAfterLimit?: number };
+  return { full: s.fullMarksWithinAttempts ?? 3, cooldown: s.cooldownSecondsAfterLimit ?? 15 };
+}
+
 export async function secretWord(): Promise<string> {
   const { data } = await db().from("event_state").select("settings").eq("id", 1).single();
   return (data?.settings as { secretWord: string }).secretWord;

@@ -46,6 +46,7 @@ async function main() {
   const tok = Object.fromEntries(cps.map((c) => [c.code, c.token]));
   const { data: ev } = await db.from("event_state").select("settings").eq("id", 1).single();
   const secret = ev.settings.secretWord;
+  const FULL = ev.settings.fullMarksWithinAttempts ?? 3;
 
   // fresh T00 credentials + progress
   const pw = "SMKTEST";
@@ -90,15 +91,18 @@ async function main() {
         let s = await A("/api/team/submit", { questionId: q.id, answer: "processor", idemKey: "smoke-nm-1" });
         ok(s.data?.result?.outcome === "NEAR_MISS", "Q01: near-miss does not count");
         s = await A("/api/team/submit", { questionId: q.id, answer: "gpu", idemKey: "smoke-w-1" });
-        ok(s.data?.result?.outcome === "WRONG" && s.data.result.attemptsLeft === 2, "Q01: wrong → 2 attempts left");
+        ok(s.data?.result?.outcome === "WRONG" && s.data.result.attemptsLeft === FULL - 1, `Q01: wrong → ${FULL - 1} attempts left for full marks`);
         const replay = await A("/api/team/submit", { questionId: q.id, answer: "gpu", idemKey: "smoke-w-1" });
         ok(replay.data?.result?.attemptNo === 1, "Q01: retried submit with same idempotency key is not counted twice");
       }
       if (q.id === "Q03") {
         await ageAttempts();
-        for (let k = 1; k <= 4; k++) await A("/api/team/submit", { questionId: q.id, answer: `wrong${k}`, idemKey: `smoke-q3-${k}` });
+        for (let k = 1; k <= FULL + 1; k++) {
+          await A("/api/team/submit", { questionId: q.id, answer: `wrong${k}`, idemKey: `smoke-q3-${k}` });
+          await ageAttempts();
+        }
         const s = await A("/api/team/submit", { questionId: q.id, answer: answers[q.id], idemKey: "smoke-q3-ok" });
-        ok(s.data?.result?.outcome === "COOLDOWN", "Q03: after 4 wrong answers a cooldown blocks submits");
+        ok(s.data?.result?.outcome === "COOLDOWN", `Q03: after ${FULL + 1} wrong answers a cooldown blocks submits`);
         await db.from("teams").update({ cooldown_until: null }).eq("id", "T00");
       }
       if (q.id === "Q05") {

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { ageAttempts, answerFor, hasSecrets, hunt, resetT00, secretWord, shot, T00_PASSWORD, tokens } from "./helpers";
+import { ageAttempts, answerFor, gameSettings, hasSecrets, hunt, resetT00, secretWord, shot, T00_PASSWORD, tokens } from "./helpers";
 
 test.skip(!hasSecrets, "needs .env.local + content/hunt.json");
 test.use({ reducedMotion: "reduce" });
@@ -19,6 +19,7 @@ test("full T00 run CP-01 → CP-08: every reveal is the exact Section 3 riddle",
   const H = hunt();
   const tok = await tokens();
   const secret = await secretWord();
+  const gs = await gameSettings(); // organisers may change the attempt policy in /admin
   await resetT00();
 
   await page.goto(`/s/${tok["CP-01"]}`);
@@ -35,20 +36,22 @@ test("full T00 run CP-01 → CP-08: every reveal is the exact Section 3 riddle",
         // near-miss does not use an attempt
         await answer(page, "processor");
         await expect(page.getByText("(no attempt used)")).toBeVisible();
-        await expect(page.getByText("Attempt 1 of 3 for full marks")).toBeVisible();
+        await expect(page.getByText(`Attempt 1 of ${gs.full} for full marks`)).toBeVisible();
         await shot(page, "02-question-nearmiss", info.project.name);
       }
       if (cp.order === 2) {
         // 4 wrong answers → 0 marks for this clue + cooldown
         await ageAttempts();
-        for (let k = 1; k <= 4; k++) {
+        // one more wrong answer than the full-marks limit → 0 marks for this clue + cooldown
+        for (let k = 1; k <= gs.full + 1; k++) {
           await answer(page, `wrong${k}`);
           await expect(page.getByText(/INCORRECT/)).toBeVisible();
+          await ageAttempts(); // keep the 5-tries-a-minute rate limit out of this check
         }
         await expect(page.getByText(/Try again in/)).toBeVisible();
         await shot(page, "03-cooldown", info.project.name);
         await expect(page.getByRole("button", { name: /Locked/ })).toBeVisible({ timeout: 5000 });
-        await expect(page.getByRole("button", { name: /submit answer/i })).toBeVisible({ timeout: 25_000 });
+        await expect(page.getByRole("button", { name: /submit answer/i })).toBeVisible({ timeout: (gs.cooldown + 15) * 1000 });
       }
       if (cp.order === 3) {
         // wrong-order scan reveals nothing new
