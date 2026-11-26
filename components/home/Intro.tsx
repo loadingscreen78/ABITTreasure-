@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { SplitFlap, Scramble } from "./fx";
 import { LiveSetting } from "./status";
+import { Score } from "@/lib/client/score";
 
 /**
  * Opening film: an ~30-second animated briefing that explains the hunt, scene by scene.
@@ -109,6 +110,7 @@ interface Scene {
 }
 
 const SCENES: Scene[] = [
+  { id: "gate", ms: 6500, say: "Tap to open the case file with sound, or continue without sound.", render: () => null },
   { id: "decrypt", ms: 2600, say: "Classified case file. Decrypting.", render: () => <Decrypting /> },
   {
     id: "presents",
@@ -373,7 +375,8 @@ const SCENES: Scene[] = [
     render: () => null, // rendered by the component (needs close handlers)
   },
 ];
-const TOTAL = SCENES.reduce((s, x) => s + x.ms, 0);
+const FILM = SCENES.filter((x) => x.id !== "gate");
+const TOTAL = FILM.reduce((s, x) => s + x.ms, 0);
 
 export function IntroFilm() {
   const [open, setOpen] = useState(true);
@@ -381,11 +384,42 @@ export function IntroFilm() {
   const [i, setI] = useState(0);
   const [js, setJs] = useState(false);
   const closing = useRef(false);
+  const score = useRef<Score | null>(null);
+  const [sound, setSound] = useState(false);
+
+  const enableSound = useCallback(() => {
+    // must run inside a tap/click (browser autoplay rules)
+    if (!score.current) score.current = Score.create();
+    score.current?.start();
+    score.current?.setMuted(false);
+    setSound(true);
+    try {
+      localStorage.setItem("tth-sound", "1");
+    } catch {
+      /* ignore */
+    }
+  }, []);
+  const toggleSound = useCallback(() => {
+    if (!score.current || !sound) {
+      enableSound();
+      return;
+    }
+    score.current.setMuted(true);
+    setSound(false);
+    try {
+      localStorage.setItem("tth-sound", "0");
+    } catch {
+      /* ignore */
+    }
+  }, [sound, enableSound]);
 
   const close = useCallback(() => {
     if (closing.current) return;
     closing.current = true;
     setLeaving(true);
+    score.current?.stop(1.2);
+    score.current = null;
+    setSound(false);
     markClosed();
     setTimeout(() => {
       setOpen(false);
@@ -405,7 +439,18 @@ export function IntroFilm() {
       document.getElementById("tth-seen")?.remove();
       (window as W).__tthOpen = 1;
       closing.current = false;
-      setI(0);
+      let wantsSound = false;
+      try {
+        wantsSound = localStorage.getItem("tth-sound") === "1";
+      } catch {
+        /* ignore */
+      }
+      if (wantsSound) {
+        score.current = Score.create();
+        score.current?.start();
+        setSound(!!score.current);
+      }
+      setI(wantsSound ? 1 : 0);
       setLeaving(false);
       setOpen(true);
     };
@@ -424,6 +469,13 @@ export function IntroFilm() {
     const id = setTimeout(() => (i < SCENES.length - 1 ? setI(i + 1) : close()), s.ms);
     return () => clearTimeout(id);
   }, [i, open, js, leaving, close]);
+
+  // soundtrack cues, in step with each scene's animation
+  useEffect(() => {
+    if (!open || leaving) return;
+    const s = SCENES[i];
+    if (s && score.current && sound) score.current.cue(s.id);
+  }, [i, open, leaving, sound]);
 
   // keyboard: Esc / Enter skip
   useEffect(() => {
@@ -446,10 +498,15 @@ export function IntroFilm() {
         <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/brand/abit-logo.webp" alt="ABIT" width={30} height={30} style={{ width: 30, height: 30 }} />
-          <span className="cv-k">Case file TTH · Briefing</span>
+          <span className="cv-k">Briefing</span>
         </span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+        <button type="button" className="cv-skip" style={{ minHeight: 40, padding: "0 10px", display: "inline-flex", alignItems: "center", gap: 6 }} onClick={toggleSound} aria-pressed={sound} aria-label={sound ? "Mute music" : "Play music"}>
+          <Speaker on={sound} /> Sound
+        </button>
         <span className="cv-k tabular">
-          {String(i + 1).padStart(2, "0")} / {String(SCENES.length).padStart(2, "0")}
+          {s.id === "gate" ? "Ready" : `${String(i).padStart(2, "0")} / ${String(FILM.length).padStart(2, "0")}`}
+        </span>
         </span>
       </div>
 
@@ -458,7 +515,42 @@ export function IntroFilm() {
           {s.say}
         </span>
         <div key={`${s.id}-${i}`} style={{ width: "100%", display: "grid", placeItems: "center" }}>
-          {s.id === "open" ? (
+          {s.id === "gate" ? (
+            <div className="cv-scene" style={{ textAlign: "center" }}>
+              <div style={{ display: "flex", justifyContent: "center" }}>
+                <Logo size={88} />
+              </div>
+              <div className="cv-k cv-a" style={v({ "--t": "200ms", marginTop: 16 })}>
+                Case file TTH · Department of Computer Science · ABIT Cuttack
+              </div>
+              <div style={{ margin: "20px 0 6px" }}>
+                <span className="cv-stamp" style={v({ "--t": "350ms", color: "#FF5A1F", fontSize: "clamp(32px, 10vw, 70px)", transform: "rotate(-6deg)" })}>
+                  Classified
+                </span>
+              </div>
+              <div className="cv-cta cv-a" style={v({ "--t": "700ms", justifyContent: "center", flexDirection: "column", alignItems: "stretch", maxWidth: 420, margin: "26px auto 0" })}>
+                <button
+                  type="button"
+                  className="btn btn-paper"
+                  onClick={() => {
+                    enableSound();
+                    setI(1);
+                  }}
+                >
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+                    <Speaker on /> Open the file · sound on
+                  </span>
+                  <span aria-hidden>▸</span>
+                </button>
+                <button type="button" className="cv-skip" style={{ alignSelf: "center" }} onClick={() => setI(1)}>
+                  Continue without sound
+                </button>
+              </div>
+              <p className="cv-k cv-a" style={v({ "--t": "1200ms", marginTop: 16, opacity: 0.7 })}>
+                Headphones or phone speaker up · the briefing starts by itself in a moment
+              </p>
+            </div>
+          ) : s.id === "open" ? (
             <div className="cv-scene" style={{ textAlign: "center" }}>
               <div style={{ display: "flex", justifyContent: "center" }}>
                 <Logo size={96} />
@@ -494,12 +586,15 @@ export function IntroFilm() {
       </div>
 
       <div className="cv-bottom">
-        <div className="cv-segs" style={{ gridTemplateColumns: SCENES.map((x) => `${x.ms}fr`).join(" ") }} aria-hidden>
-          {SCENES.map((x, k) => (
-            <span key={x.id} className={`cv-seg${k < i ? " is-done" : k === i ? " is-on" : ""}`} style={v({ "--dur": `${x.ms}ms` })}>
-              <span key={k === i ? `on-${i}` : "off"} />
-            </span>
-          ))}
+        <div className="cv-segs" style={{ gridTemplateColumns: FILM.map((x) => `${x.ms}fr`).join(" ") }} aria-hidden>
+          {FILM.map((x, k0) => {
+            const k = k0 + 1;
+            return (
+              <span key={x.id} className={`cv-seg${k < i ? " is-done" : k === i ? " is-on" : ""}`} style={v({ "--dur": `${x.ms}ms` })}>
+                <span key={k === i ? `on-${i}` : "off"} />
+              </span>
+            );
+          })}
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
           <span className="cv-k tabular">~{Math.round(TOTAL / 1000)} s briefing · tap skip any time</span>
@@ -509,6 +604,15 @@ export function IntroFilm() {
         </div>
       </div>
     </div>
+  );
+}
+
+function Speaker({ on }: { on: boolean }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="square" aria-hidden>
+      <path d="M4 9h4l5-4v14l-5-4H4z" />
+      {on ? <path d="M16 9c1.3 1.6 1.3 4.4 0 6M18.5 6.5c2.8 3.2 2.8 7.8 0 11" /> : <path d="M16 9l5 6M21 9l-5 6" />}
+    </svg>
   );
 }
 
