@@ -86,13 +86,51 @@ describe("standings", () => {
     // B fastest: 75+15+3+5=98; C: 75+15+5+1=96; A: 75+15+3+3=96, C faster? no: A=5ms < C=9ms
     expect(rows.map((r) => [r.id, r.total, r.rank])).toEqual([
       ["B", 98, 1],
-      ["A", 96, 2],
-      ["C", 96, 3],
+      ["A", 96.5, 2],
+      ["C", 96.25, 3],
     ]);
   });
   it("adjustments apply and total is clamped to 0..100", () => {
     const rows = computeStandings([team("A", { adjustMarks: 50, elapsedMs: 1 }), team("B", { adjustMarks: -500, elapsedMs: 2 })], S);
     expect(rows.find((r) => r.id === "A")!.total).toBe(100);
     expect(rows.find((r) => r.id === "B")!.total).toBe(0);
+  });
+});
+
+describe("tie-break points (same total → faster team gets more)", () => {
+  it("3-way tie: +0.5 / +0.25 / +0.1 by finish time", () => {
+    const rows = computeStandings(
+      [
+        team("A", { clueMarks: 60, teamwork: 3, elapsedMs: 900 }),
+        team("B", { clueMarks: 60, teamwork: 3, elapsedMs: 700 }),
+        team("C", { clueMarks: 60, teamwork: 3, elapsedMs: 800 }),
+      ],
+      S,
+    );
+    expect(rows.map((r) => [r.id, r.total, r.tieBreak, r.rank])).toEqual([
+      ["B", 78.5, 0.5, 1],
+      ["C", 78.25, 0.25, 2],
+      ["A", 78.1, 0.1, 3],
+    ]);
+  });
+  it("never lifts a team above one that genuinely scored more", () => {
+    const rows = computeStandings([team("A", { clueMarks: 60, teamwork: 3, elapsedMs: 1 }), team("B", { clueMarks: 60, teamwork: 3, elapsedMs: 2 }), team("X", { clueMarks: 60, teamwork: 4, elapsedMs: 999 })], S);
+    expect(rows[0]).toMatchObject({ id: "X", total: 79, tieBreak: 0 });
+    expect(rows[1]).toMatchObject({ id: "A", total: 78.5 });
+  });
+  it("a finished team beats unfinished teams on the same total; no tie → no tie-break", () => {
+    const rows = computeStandings(
+      [team("A", { status: "ACTIVE", clueMarks: 40, finalMarks: 0, teamwork: 0, elapsedMs: null }), team("B", { clueMarks: 40, finalMarks: 0, teamwork: 0, elapsedMs: 5 }), team("C", { clueMarks: 10, finalMarks: 0, teamwork: 0, elapsedMs: 9 })],
+      S,
+    );
+    expect(rows.find((r) => r.id === "B")).toMatchObject({ total: 40.5, rank: 1 });
+    expect(rows.find((r) => r.id === "A")).toMatchObject({ total: 40, tieBreak: 0 });
+    expect(rows.find((r) => r.id === "C")!.tieBreak).toBe(0);
+  });
+  it("identical finish times share the tier; a tie with equal times awards nothing", () => {
+    const same = computeStandings([team("A", { clueMarks: 50, elapsedMs: 5 }), team("B", { clueMarks: 50, elapsedMs: 5 })], S);
+    expect(same.every((r) => r.tieBreak === 0)).toBe(true);
+    const three = computeStandings([team("A", { clueMarks: 50, elapsedMs: 5 }), team("B", { clueMarks: 50, elapsedMs: 5 }), team("C", { clueMarks: 50, elapsedMs: 9 })], S);
+    expect(Object.fromEntries(three.map((r) => [r.id, r.tieBreak]))).toEqual({ A: 0.5, B: 0.5, C: 0.1 });
   });
 });

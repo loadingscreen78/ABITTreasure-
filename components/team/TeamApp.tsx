@@ -9,6 +9,7 @@ import { CluePanel, StartPanel } from "./CluePanel";
 import { FinishPanel } from "./FinishPanel";
 import { GatePanel, MessagePanel } from "./GatePanel";
 import { Strip } from "@/components/ui/kit";
+import { LaunchOverlay } from "@/components/ui/Launch";
 
 export interface Flash {
   marks: number;
@@ -47,8 +48,14 @@ export default function TeamApp({ mode }: { mode: "scan" | "play" | "finish" }) 
   const [punching, setPunching] = useState<number | null>(null);
   const lastCleared = useRef<number | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [launch, setLaunch] = useState<string | null>(null);
 
   const accept = useCallback((v: TeamView) => {
+    // START pressed: the server sends a future start time → play the launch countdown.
+    if (v.kind === "gate" && v.gate === "NOT_STARTED" && v.startsAt) {
+      const until = new Date(v.startsAt).getTime() - (new Date(v.header.serverNow).getTime());
+      if (until > 0 && until < 5 * 60_000) setLaunch(v.startsAt);
+    }
     if ("header" in v && v.header) {
       setSkew(new Date(v.header.serverNow).getTime() - Date.now());
       const prev = lastCleared.current;
@@ -95,7 +102,7 @@ export default function TeamApp({ mode }: { mode: "scan" | "play" | "finish" }) 
     };
     document.addEventListener("visibilitychange", onVis);
     let id: ReturnType<typeof setInterval> | undefined;
-    if (gate === "NOT_STARTED" || gate === "PAUSED") id = setInterval(() => void load(), 5000);
+    if (gate === "NOT_STARTED" || gate === "PAUSED") id = setInterval(() => void load(), 3000);
     return () => {
       document.removeEventListener("visibilitychange", onVis);
       if (id) clearInterval(id);
@@ -162,6 +169,7 @@ export default function TeamApp({ mode }: { mode: "scan" | "play" | "finish" }) 
 
   return (
     <TeamShell header={header} skewMs={skew} punching={punching}>
+      {launch && <LaunchOverlay startsAt={launch} skewMs={skew} onZero={() => void load()} onDone={() => setLaunch(null)} />}
       {net !== "ok" && view && (
         <div style={{ marginTop: 12 }}>
           <Strip tone={net === "offline" ? "error" : "note"} live>

@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
 import { Strip } from "@/components/ui/kit";
-import { Countdown, useNow } from "@/components/ui/live";
+import { useNow } from "@/components/ui/live";
+import { LaunchOverlay } from "@/components/ui/Launch";
 import { ago, clockTime, mmss } from "@/lib/game/format";
 import { OrgHeader, OrganiserGate } from "./OrganiserGate";
 import { act, usePoll } from "./useOrgData";
@@ -34,6 +35,7 @@ export interface Standing {
   final: number;
   teamworkMarks: number;
   timeBonus: number;
+  tieBreak?: number;
   adjustMarks: number;
   total: number;
   rank: number | null;
@@ -81,6 +83,7 @@ function Dashboard() {
   const { data, error, mutate } = usePoll<Snap>("/api/admin/snapshot");
   const [msg, setMsg] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const [countdown, setCountdown] = useState<string | null>(null);
+  const [startDelay, setStartDelay] = useState(10);
   const now = useNow(1000);
 
   const run = async (body: Record<string, unknown>, ok: string) => {
@@ -97,22 +100,14 @@ function Dashboard() {
   const startsIn = ev.status === "LIVE" && ev.started_at && new Date(ev.started_at).getTime() > now + skew;
 
   const start = async () => {
-    const r = await run({ type: "event", action: "START", delaySeconds: 3 }, "Hunt started.");
-    if (r.ok) setCountdown(new Date(Date.now() + 3000).toISOString());
+    if (!confirm(`Start the hunt? Every phone and the board will count down ${startDelay} s, then it goes live.`)) return;
+    const r = await run({ type: "event", action: "START", delaySeconds: startDelay }, "Hunt started.");
+    if (r.ok) setCountdown(new Date(Date.now() + startDelay * 1000).toISOString());
   };
 
   return (
     <div className="sheet-wide" style={{ paddingTop: 18, display: "grid", gap: 20 }}>
-      {countdown && (
-        <div className="overlay" onClick={() => setCountdown(null)}>
-          <div style={{ textAlign: "center" }}>
-            <div className="t-numeral" style={{ fontSize: 220, color: "var(--color-paper)" }}>
-              <Countdown until={countdown} skewMs={0} onDone={() => setTimeout(() => setCountdown(null), 600)} />
-            </div>
-            <p className="t-display-sm">The hunt is live</p>
-          </div>
-        </div>
-      )}
+      {countdown && <LaunchOverlay startsAt={countdown} skewMs={0} big holdMs={3000} note="Teams can scan the CP—01 QR now" onDone={() => setCountdown(null)} />}
       {error && <Strip tone="error">Connection problem — showing last data. {String(error.message)}</Strip>}
       {msg && <Strip tone={msg.tone === "ok" ? "ok" : "error"} live>{msg.text}</Strip>}
 
@@ -129,9 +124,18 @@ function Dashboard() {
         </div>
         <div className="btn-row" style={{ marginTop: 12 }}>
           {(ev.status === "DRAFT" || ev.status === "ENDED") && (
-            <button className="btn btn-ink btn-sm" onClick={() => void start()}>
-              Start (3-2-1)
-            </button>
+            <>
+              <select className="input-box" style={{ width: "auto", minHeight: 48 }} value={startDelay} onChange={(e) => setStartDelay(Number(e.target.value))} aria-label="Countdown length">
+                {[3, 10, 30, 60].map((n) => (
+                  <option key={n} value={n}>
+                    {n} s countdown
+                  </option>
+                ))}
+              </select>
+              <button className="btn btn-ink btn-sm" onClick={() => void start()}>
+                Start hunt
+              </button>
+            </>
           )}
           {ev.status === "LIVE" && (
             <button className="btn btn-paper btn-sm" onClick={() => void run({ type: "event", action: "PAUSE" }, "Paused.")}>

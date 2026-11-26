@@ -16,12 +16,9 @@ export function Seal() {
           </textPath>
         </text>
       </svg>
-      <svg viewBox="0 0 200 200" style={{ position: "absolute", inset: 0 }}>
-        <rect x="62" y="74" width="76" height="52" fill="#FF5A1F" stroke="#121212" strokeWidth="2" transform="rotate(-8 100 100)" />
-        <text x="100" y="108" textAnchor="middle" fontFamily="var(--font-display)" fontWeight="800" fontSize="30" fill="#121212" transform="rotate(-8 100 100)" style={{ fontVariationSettings: '"wdth" 75' }}>
-          TTH
-        </text>
-      </svg>
+      {/* official ABIT logo, static in the centre while the ring turns */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/brand/abit-logo.webp" alt="" width="120" height="120" style={{ position: "absolute", left: "19%", top: "19%", width: "62%", height: "62%" }} />
     </div>
   );
 }

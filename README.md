@@ -145,7 +145,7 @@ judge keeps one printed answer key.
 ---
 
 ## 6. TODO(ORGANISER)
-1. **Official ABIT logo**: add `public/brand/abit-logo.png` and set `BRAND.logo` in `lib/brand.ts`. Until then a text wordmark is used.
+1. **Official ABIT logo**: done (downloaded from abit.edu.in). Replace the files in `public/brand/` if the department has a newer version.
 2. **Exact venue spots** for CP-01…CP-07 (`venueDetail` in `content/hunt.json`, or edit live in `/admin`). The CP-06 venue name is also needed.
 3. **Real organiser emails**: placeholder accounts `admin@abit-hunt.test` / `judge@abit-hunt.test` exist (passwords in `organisers-2026-11-23.txt`). Re-run `npm run organisers -- admin=… judge=…` with real addresses.
 4. **Secret word**: change it from the sample.
@@ -163,7 +163,17 @@ judge keeps one printed answer key.
   limit can't be gamed), and the phone shows a countdown. Correct answers never count toward the limit.
 - Admin live ops shows each team's wallet and hints bought; the answer key lists every hint.
 
-## 8. Design
+## 8. Launch countdown, tie-breaks, logo
+- **Start:** `/admin → Start hunt` with a 3 / 10 / 30 / 60 s countdown (10 s default). Every team phone and the projector board play
+  the same full-screen launch sequence (countdown → "THE HUNT IS LIVE"), synced to server time.
+- **Ties:** when teams end on the same total, the faster finisher gets tie-break points: **+0.5 / +0.25 / +0.1** (1st / 2nd / 3rd
+  fastest in that tie). These fractions can never lift a team above one that genuinely scored more. The tie-break is shown in the judge panel, the judge
+  sheet and the CSV.
+- **Logo:** the official ABIT logo (from abit.edu.in) is in `public/brand/` and shows in every header, on the home page, the board, the
+  finish screen, all printables and the favicon.
+- **Clue 13 (water point)** now points to the drinking-water point in the **Department of Computer Science**.
+
+## 9. Design
 "Field Dossier": graph-paper case files, punch cards, rubber stamps, mono metadata. Tokens are in `app/globals.css`, the kit is in
 `components/ui`, and the dev-only sheet is at `/dev/kit` (with `npm run dev`). `scripts/check-design.mjs` blocks banned hues,
 gradients, blur, soft corners, banned fonts and emoji.

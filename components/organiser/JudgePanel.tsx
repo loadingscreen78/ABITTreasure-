@@ -142,6 +142,7 @@ function Judge() {
                 <th>Final /15</th>
                 <th>TW /5</th>
                 <th>Bonus /5</th>
+                <th>Tie-break</th>
                 <th>Total</th>
               </tr>
             </thead>
@@ -159,6 +160,7 @@ function Judge() {
                     <td>{t.standing!.final}</td>
                     <td>{t.standing!.teamworkMarks}</td>
                     <td>{t.standing!.timeBonus}</td>
+                    <td>{t.standing!.tieBreak ? `+${t.standing!.tieBreak}` : ""}</td>
                     <td>
                       <strong>{t.standing!.total}</strong>
                     </td>

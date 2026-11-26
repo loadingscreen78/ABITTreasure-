@@ -1,5 +1,6 @@
 "use client";
-import { useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
+import { LaunchOverlay } from "@/components/ui/Launch";
 import { Marquee, Wordmark } from "@/components/ui/brand";
 import { useNow } from "@/components/ui/live";
 import { BRAND } from "@/lib/brand";
@@ -45,9 +46,13 @@ export default function Board() {
   const skew = data ? new Date(data.now).getTime() - now : 0;
   const started = data?.event.startedAt ? new Date(data.event.startedAt).getTime() : null;
   const elapsed = started && now + skew > started ? now + skew - started : null;
+  const [launchedFor, setLaunchedFor] = useState<string | null>(null);
+  const startedAt = data?.event.startedAt ?? null;
+  const showLaunch = data?.event.status === "LIVE" && !!started && startedAt !== launchedFor && now + skew < started + 2600;
 
   return (
     <div style={{ minHeight: "100dvh", background: bg, color: fg, display: "flex", flexDirection: "column", fontSize: "clamp(14px, 1.3vw, 22px)" }}>
+      {showLaunch && startedAt && <LaunchOverlay startsAt={startedAt} skewMs={skew} big holdMs={4000} note="Teams — scan the CP—01 QR now" onDone={() => setLaunchedFor(startedAt)} />}
       <header style={{ display: "flex", alignItems: "center", gap: 18, padding: "14px 2.5vw", borderBottom: `2px solid ${fg}` }}>
         <Wordmark size="md" />
         <span className="t-meta" style={{ fontSize: "0.7em" }}>

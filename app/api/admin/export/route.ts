@@ -18,10 +18,10 @@ export const GET = handler("admin/export", async (req: Request) => {
   if (type === "judge") {
     const snap = await loadSnapshot(r.db);
     if (!snap) return fail("NETWORK", "Database unreachable.", 503);
-    const rows = snap.standings.map((s) => [s.id, s.name, s.clues, s.final, s.teamworkMarks, s.timeBonus, s.adjustMarks, s.total, s.rank ?? (s.status === "DISQUALIFIED" ? "DQ" : "")]);
+    const rows = snap.standings.map((s) => [s.id, s.name, s.clues, s.final, s.teamworkMarks, s.timeBonus, s.tieBreak || "", s.adjustMarks, s.total, s.rank ?? (s.status === "DISQUALIFIED" ? "DQ" : "")]);
     return csv(
       "judge-evaluation-sheet.csv",
-      toCsv([["Team ID", "Team Name", "Clues /75", "Final /15", "Teamwork /5", "Time Bonus /5", "Adjustments", "Total /100", "Rank"], ...rows]),
+      toCsv([["Team ID", "Team Name", "Clues /75", "Final /15", "Teamwork /5", "Time Bonus /5", "Tie-break", "Adjustments", "Total /100", "Rank"], ...rows]),
     );
   }
   if (type === "attempts") {

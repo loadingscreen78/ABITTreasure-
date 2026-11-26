@@ -43,6 +43,8 @@ export function IntroCover() {
     <div className="cover" ref={ref} onClick={skipIntro} role="presentation" aria-hidden>
       <div className="cover-tape t-meta">CLASSIFIED · ABIT · CODE2CAREER · CLASSIFIED · ABIT · CODE2CAREER · CLASSIFIED</div>
       <div className="cover-inner">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/abit-logo.webp" alt="" width="84" height="84" style={{ width: 84, height: 84, display: "block", marginBottom: 14 }} />
         <div className="t-meta" style={{ opacity: 0.7 }}>
           Case file TTH · Dept. of Computer Science
         </div>

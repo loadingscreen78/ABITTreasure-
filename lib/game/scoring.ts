@@ -68,6 +68,8 @@ export interface Standing extends TeamScoreInput {
   final: number;
   teamworkMarks: number;
   timeBonus: number;
+  /** Tie-break points: faster finisher among teams on the same total (+0.5 / +0.25 / +0.1). */
+  tieBreak: number;
   total: number;
   rank: number | null;
   eligibleForBonus: boolean;
@@ -110,6 +112,41 @@ export function timeBonuses(
   return out;
 }
 
+/** Tie-break points for 1st / 2nd / 3rd fastest inside a group of teams on the same total. */
+export const TIE_BREAK_POINTS = [0.5, 0.25, 0.1];
+
+/**
+ * Teams with the SAME total are ordered by finish time; the fastest gets +0.5, the next +0.25,
+ * the next +0.1. Fractions are smaller than any real mark, so a tie-break can never lift a team
+ * above another team that genuinely scored more. Only finished teams have a time; identical
+ * times share a tier. Disqualified teams are excluded.
+ */
+export function tieBreaks(rows: { id: string; total: number; elapsedMs: number | null; status: string }[]): Map<string, number> {
+  const out = new Map<string, number>();
+  const groups = new Map<number, typeof rows>();
+  for (const r of rows) {
+    if (r.status === "DISQUALIFIED") continue;
+    const g = groups.get(r.total) ?? [];
+    g.push(r);
+    groups.set(r.total, g);
+  }
+  for (const g of groups.values()) {
+    if (g.length < 2) continue;
+    const timed = g.filter((r) => r.elapsedMs !== null).sort((a, b) => a.elapsedMs! - b.elapsedMs!);
+    // a tie with only one finished team: it still beats the unfinished ones
+    let i = 0;
+    while (i < timed.length) {
+      let j = i;
+      while (j + 1 < timed.length && timed[j + 1]!.elapsedMs === timed[i]!.elapsedMs) j++;
+      const pts = TIE_BREAK_POINTS[i] ?? 0;
+      // everyone tied on time too → nobody is faster → no tie-break
+      if (!(i === 0 && j === timed.length - 1 && timed.length === g.length)) for (let k = i; k <= j; k++) if (pts) out.set(timed[k]!.id, pts);
+      i = j + 1;
+    }
+  }
+  return out;
+}
+
 export function computeStandings(teams: TeamScoreInput[], settings: Settings): Standing[] {
   const players = teams.filter((t) => !t.isRehearsal);
   const base = players.map((t) => {
@@ -126,8 +163,15 @@ export function computeStandings(teams: TeamScoreInput[], settings: Settings): S
     const timeBonus = b.status === "DISQUALIFIED" ? 0 : (bonus.get(b.id) ?? 0);
     const total =
       b.status === "DISQUALIFIED" ? 0 : clamp(b.clues + b.final + b.teamworkMarks + timeBonus + b.adjustMarks, 0, 100);
-    return { ...b, timeBonus, total, rank: null };
+    return { ...b, timeBonus, tieBreak: 0, total, rank: null };
   });
+  const tb = tieBreaks(rows);
+  for (const r of rows) {
+    const add = tb.get(r.id) ?? 0;
+    if (!add) continue;
+    r.tieBreak = add;
+    r.total = Math.min(100, Math.round((r.total + add) * 100) / 100);
+  }
   const order = (a: Standing, b: Standing) => {
     const dq = Number(a.status === "DISQUALIFIED") - Number(b.status === "DISQUALIFIED");
     if (dq !== 0) return dq;

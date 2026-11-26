@@ -4,6 +4,7 @@ import { IconArrow, IconCamera, IconLock, IconPin, RoughFilter } from "@/compone
 import { RegisterForm } from "@/components/home/RegisterForm";
 import { Seal, RouteMap } from "@/components/home/art";
 import { Cipher, IntroCover, LiveStatus, Reveal, Scramble, SplitFlap } from "@/components/home/fx";
+import { Faq, PhoneDemo, Rules, Scoring, Timeline, Wallet } from "@/components/home/briefing";
 import { BRAND } from "@/lib/brand";
 
 // Static, prerendered welcome. Motion is CSS + native SVG animation with a few tiny client islands.
@@ -119,9 +120,19 @@ export default function Home() {
           </a>
         </section>
 
-        {/* ---------------- 01 ROUTE ---------------- */}
-        <section id="route" style={{ marginTop: 20 }}>
-          <SecHead no="01" kicker="Field map · route TTH" title="Eight stops. One loop." />
+        {/* ---------------- 01 BRIEFING ---------------- */}
+        <section id="route" style={{ marginTop: 20, scrollMarginTop: 16 }}>
+          <SecHead no="01" kicker="Mission briefing · how it works" title="Scan. Solve. Decrypt. Move." />
+          <p style={{ margin: "0 0 18px", maxWidth: 640 }}>
+            The Tech Treasure Hunt is a 20-minute race around the ABIT campus for 2nd-year teams of 3–4. Eight printed QR cards hide at eight
+            places. Each one asks a tech question; get it right and the riddle to the next place decrypts on your phone. Watch the briefing:
+          </p>
+          <PhoneDemo />
+        </section>
+
+        {/* ---------------- 02 ROUTE ---------------- */}
+        <section style={{ marginTop: 48 }}>
+          <SecHead no="02" kicker="Field map · route TTH" title="Eight stops. One loop." />
           <Reveal className="card" style={{ padding: 0, overflow: "hidden" }} r="0deg" r0="-1deg">
             <div className="t-meta" style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", borderBottom: "1.5px solid var(--color-ink)" }}>
               <span>Live route</span>
@@ -136,9 +147,32 @@ export default function Home() {
           </p>
         </section>
 
-        {/* ---------------- 02 CIPHER ---------------- */}
-        <section style={{ marginTop: 44 }}>
-          <SecHead no="02" kicker="Training exercise" title="Crack the cipher" />
+        {/* ---------------- 03 SCORING ---------------- */}
+        <section style={{ marginTop: 48 }}>
+          <SecHead no="03" kicker="The 100-mark scheme" title="How you score" />
+          <Scoring />
+        </section>
+
+        {/* ---------------- 04 WALLET ---------------- */}
+        <section style={{ marginTop: 48 }}>
+          <SecHead no="04" kicker="Hint wallet · separate from your score" title="Earn it. Spend it." />
+          <Reveal className="card" style={{ padding: 16 }} r="0deg" r0="-1deg">
+            <Wallet />
+          </Reveal>
+        </section>
+
+        <div className="band" aria-hidden>
+          <span>
+            {"Decode <b>•</b> Discover <b>•</b> Win <b>•</b> Code2Career <b>•</b> ABIT Cuttack <b>•</b> "
+              .repeat(4)
+              .split(/(<b>•<\/b>)/)
+              .map((s, i) => (s === "<b>•</b>" ? <b key={i}>•</b> : <span key={i}>{s}</span>))}
+          </span>
+        </div>
+
+        {/* ---------------- 05 CIPHER ---------------- */}
+        <section style={{ marginTop: 56 }}>
+          <SecHead no="05" kicker="Training exercise" title="Crack the cipher" />
           <Reveal className="card" style={{ padding: 16 }} r="0deg" r0="1deg">
             <Cipher />
           </Reveal>
@@ -147,9 +181,21 @@ export default function Home() {
           </p>
         </section>
 
-        {/* ---------------- 03 INSTRUCTIONS ---------------- */}
-        <section style={{ marginTop: 44 }}>
-          <SecHead no="03" kicker="Read before deployment" title="Field instructions" />
+        {/* ---------------- 06 DAY ---------------- */}
+        <section style={{ marginTop: 48 }}>
+          <SecHead no="06" kicker="Order of the day" title="Day of the hunt" />
+          <Timeline />
+        </section>
+
+        {/* ---------------- 07 RULES ---------------- */}
+        <section style={{ marginTop: 48 }}>
+          <SecHead no="07" kicker="Rules of engagement" title="Play it straight" />
+          <Rules />
+        </section>
+
+        {/* ---------------- 08 INSTRUCTIONS ---------------- */}
+        <section style={{ marginTop: 48 }}>
+          <SecHead no="08" kicker="Read before deployment" title="Field instructions" />
           <div className="evidence-grid">
             {STEPS.map(([t, s, r], i) => (
               <Reveal key={t} className="evidence" r={r} r0={i % 2 ? "6deg" : "-6deg"} d={i * 90}>
@@ -183,10 +229,16 @@ export default function Home() {
           </Reveal>
         </section>
 
-        {/* ---------------- 04 REGISTER ---------------- */}
+        {/* ---------------- 09 FAQ ---------------- */}
+        <section style={{ marginTop: 48 }}>
+          <SecHead no="09" kicker="Questions from the field" title="FAQ" />
+          <Faq />
+        </section>
+
+        {/* ---------------- 10 REGISTER ---------------- */}
         <section id="register" className="home-split" style={{ marginTop: 48, scrollMarginTop: 16 }}>
           <div>
-            <SecHead no="04" kicker="Teams of 3–4 · 2nd year" title="Enlist your team" />
+            <SecHead no="10" kicker="Teams of 3–4 · 2nd year" title="Enlist your team" />
             <p style={{ margin: "0 0 12px" }}>File your team now. The organisers turn every registration into a Team ID and password, printed on a slip you collect at the registration desk.</p>
             <ul style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 6 }}>
               <li>Only team and member names are collected.</li>
@@ -213,6 +265,23 @@ export default function Home() {
             </Link>
           </div>
         </section>
+
+        {/* ---------------- FINAL CTA ---------------- */}
+        <Reveal className="final-cta" r="-1deg" r0="-4deg">
+          <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+            <Wordmark size="lg" text={false} />
+            <div className="t-meta">{BRAND.instituteFull} · {BRAND.department}</div>
+          </div>
+          <h2 style={{ marginTop: 16 }}>
+            Are you
+            <br />
+            in?
+          </h2>
+          <p style={{ margin: "12px 0 18px", fontSize: 18, fontWeight: 600, maxWidth: 520 }}>Eight checkpoints. Fifteen clues. One treasure. Bring your team, your phone and your best guess.</p>
+          <a className="btn btn-ink" href="#register" style={{ maxWidth: 420 }}>
+            Enlist your team <span aria-hidden>↑</span>
+          </a>
+        </Reveal>
 
         <Footer />
       </main>

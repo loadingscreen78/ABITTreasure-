@@ -1,33 +1,34 @@
 import { BRAND } from "@/lib/brand";
 
-/**
- * Text wordmark until the official logo is supplied.
- * TODO(ORGANISER): add the official ABIT logo at public/brand/abit-logo.png and set BRAND.logo.
- * Do NOT draw, trace or recreate the ABIT logo.
- */
-export function Wordmark({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
-  const fs = size === "lg" ? 30 : size === "sm" ? 14 : 18;
-  if (BRAND.logo) {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img src={BRAND.logo} alt="ABIT logo" height={fs * 2} style={{ height: fs * 2, width: "auto" }} />;
-  }
+/** Official ABIT logo + boxed "ABIT" wordmark. */
+export function Wordmark({ size = "md", text = true }: { size?: "sm" | "md" | "lg" | "xl"; text?: boolean }) {
+  const fs = size === "xl" ? 40 : size === "lg" ? 30 : size === "sm" ? 14 : 18;
+  const px = size === "xl" ? 112 : size === "lg" ? 72 : size === "sm" ? 30 : 42;
   return (
-    <span
-      aria-label="ABIT"
-      style={{
-        fontFamily: "var(--font-display)",
-        fontVariationSettings: '"wdth" 125',
-        fontWeight: 800,
-        fontSize: fs,
-        lineHeight: 1,
-        border: "1.5px solid currentColor",
-        color: "inherit",
-        padding: "4px 7px 3px",
-        display: "inline-block",
-        letterSpacing: "0.02em",
-      }}
-    >
-      ABIT
+    <span style={{ display: "inline-flex", alignItems: "center", gap: Math.round(px / 5) }}>
+      {BRAND.logo && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={BRAND.logo} alt="Ajay Binay Institute of Technology logo" width={px} height={px} style={{ width: px, height: px, display: "block" }} decoding="async" />
+      )}
+      {text && (
+        <span
+          aria-label="ABIT"
+          style={{
+            fontFamily: "var(--font-display)",
+            fontVariationSettings: '"wdth" 125',
+            fontWeight: 800,
+            fontSize: fs,
+            lineHeight: 1,
+            border: "1.5px solid currentColor",
+            color: "inherit",
+            padding: "4px 7px 3px",
+            display: "inline-block",
+            letterSpacing: "0.02em",
+          }}
+        >
+          ABIT
+        </span>
+      )}
     </span>
   );
 }

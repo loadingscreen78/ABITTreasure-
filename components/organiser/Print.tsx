@@ -20,6 +20,11 @@ function useData<T>(query: string | null) {
   return state;
 }
 
+function PrintLogo({ mm = 10 }: { mm?: number }) {
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={BRAND.logoPrint} alt="ABIT logo" style={{ width: `${mm}mm`, height: `${mm}mm`, flex: "none" }} />;
+}
+
 function Qr({ text, mm, label }: { text: string; mm: number; label: string }) {
   const { svg } = qrSvg(text);
   return <span role="img" aria-label={label} style={{ display: "block", width: `${mm}mm`, height: `${mm}mm` }} dangerouslySetInnerHTML={{ __html: svg.replace("<svg ", `<svg width="100%" height="100%" `) }} />;
@@ -85,7 +90,8 @@ function PrintCheckpointsBody() {
         <section className="p-sheet" key={i}>
           {pair.map((c) => (
             <article key={c.code} style={{ padding: "11mm 12mm", display: "flex", flexDirection: "column", borderRight: "0.3mm dashed #121212" }}>
-              <div className="t-meta" style={{ fontSize: "8.5pt", borderBottom: "0.6mm solid #121212", paddingBottom: "2mm" }}>
+              <div className="t-meta" style={{ fontSize: "8.5pt", borderBottom: "0.6mm solid #121212", paddingBottom: "2mm", display: "flex", alignItems: "center", gap: "2.5mm" }}>
+                <PrintLogo mm={10} />
                 ABIT · Department of Computer Science · CODE2CAREER
               </div>
               <div className="t-numeral" style={{ fontSize: "62pt", marginTop: "5mm" }}>
@@ -141,6 +147,7 @@ function PrintSecretWordBody() {
       {error && <Strip tone="error">{error}</Strip>}
       {data && (
         <section className="p-sheet" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "8mm" }}>
+          <PrintLogo mm={22} />
           <div className="t-meta" style={{ fontSize: "8pt" }}>
             ABIT · CODE2CAREER · Tech Treasure Hunt
           </div>
@@ -184,7 +191,8 @@ function PrintCredentialsBody() {
         <section className="p-sheet" key={i}>
           {p.map((t) => (
             <article key={t.id} style={{ padding: "5mm 6mm", border: "0.2mm dashed #121212", display: "flex", flexDirection: "column", gap: "1.5mm" }}>
-              <div className="t-meta" style={{ fontSize: "6.5pt", borderBottom: "0.4mm solid #121212", paddingBottom: "1mm" }}>
+              <div className="t-meta" style={{ fontSize: "6.5pt", borderBottom: "0.4mm solid #121212", paddingBottom: "1mm", display: "flex", alignItems: "center", gap: "2.5mm" }}>
+                <PrintLogo mm={6} />
                 ABIT · CODE2CAREER · Tech Treasure Hunt
               </div>
               <div style={{ fontWeight: 600, fontSize: "11pt" }}>{t.name}</div>
@@ -236,7 +244,8 @@ function PrintAnswerKeyBody() {
               Confidential — organisers only
             </span>
           </div>
-          <div className="t-meta" style={{ fontSize: "8pt", borderBottom: "0.6mm solid #121212", paddingBottom: "2mm" }}>
+          <div className="t-meta" style={{ fontSize: "8pt", borderBottom: "0.6mm solid #121212", paddingBottom: "2mm", display: "flex", alignItems: "center", gap: "2.5mm" }}>
+            <PrintLogo mm={10} />
             {BRAND.instituteFull} · CODE2CAREER · Tech Treasure Hunt · CONFIDENTIAL
           </div>
           <h2 className="t-display-sm" style={{ margin: "4mm 0" }}>Answer key</h2>
@@ -358,7 +367,8 @@ function TeamSheet({ id }: { id: string }) {
   if (!data) return <p className="t-meta">Loading {id}…</p>;
   return (
     <section className="p-sheet">
-      <div className="t-meta" style={{ fontSize: "8pt", borderBottom: "0.6mm solid #121212", paddingBottom: "2mm" }}>
+      <div className="t-meta" style={{ fontSize: "8pt", borderBottom: "0.6mm solid #121212", paddingBottom: "2mm", display: "flex", alignItems: "center", gap: "2.5mm" }}>
+        <PrintLogo mm={10} />
         {BRAND.instituteFull} · CODE2CAREER · Tech Treasure Hunt · Participant answer sheet
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "4mm", margin: "4mm 0" }}>
@@ -415,13 +425,14 @@ export function PrintJudgeSheet() {
 
 // Hooks live in the body so nothing is fetched until the organiser gate has passed.
 function PrintJudgeSheetBody() {
-  const { data, error } = useData<{ rows: { id: string; name: string; status: string; clues: number; final: number; teamworkMarks: number; timeBonus: number; adjustMarks: number; total: number; rank: number | null }[] }>("kind=judge-sheet");
+  const { data, error } = useData<{ rows: { id: string; name: string; status: string; clues: number; final: number; teamworkMarks: number; timeBonus: number; tieBreak?: number; adjustMarks: number; total: number; rank: number | null }[] }>("kind=judge-sheet");
   return (
     <>
       {error && <Strip tone="error">{error}</Strip>}
       {data && (
         <section className="p-sheet">
-          <div className="t-meta" style={{ fontSize: "8pt", borderBottom: "0.6mm solid #121212", paddingBottom: "2mm" }}>
+          <div className="t-meta" style={{ fontSize: "8pt", borderBottom: "0.6mm solid #121212", paddingBottom: "2mm", display: "flex", alignItems: "center", gap: "2.5mm" }}>
+            <PrintLogo mm={10} />
             {BRAND.instituteFull} · CODE2CAREER · Tech Treasure Hunt · Judge&apos;s team evaluation sheet
           </div>
           <table className="tbl" style={{ background: "transparent", marginTop: "4mm" }}>
@@ -433,6 +444,7 @@ function PrintJudgeSheetBody() {
                 <th>Final /15</th>
                 <th>Teamwork /5</th>
                 <th>Time Bonus /5</th>
+                <th>Tie-break</th>
                 <th>Adj.</th>
                 <th>Total /100</th>
                 <th>Rank</th>
@@ -447,6 +459,7 @@ function PrintJudgeSheetBody() {
                   <td>{r.final}</td>
                   <td>{r.teamworkMarks}</td>
                   <td>{r.timeBonus}</td>
+                  <td>{r.tieBreak ? `+${r.tieBreak}` : ""}</td>
                   <td>{r.adjustMarks || ""}</td>
                   <td>
                     <strong>{r.total}</strong>

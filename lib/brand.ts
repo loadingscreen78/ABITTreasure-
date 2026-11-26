@@ -11,8 +11,9 @@ export const BRAND = {
   coordinates: "20.4696° N, 85.8516° E",
   address: "Markat Nagar, CDA Sector-1, Cuttack – 753014, Odisha",
   footer: "ABIT · Department of Computer Science · CODE2CAREER · Tamaso Mā Jyotirgamaya · 20.4696° N, 85.8516° E",
-  // TODO(ORGANISER): set to "/brand/abit-logo.png" once the official logo file is added.
-  logo: null as string | null,
+  // Official ABIT logo (from abit.edu.in), resized for the web. Print uses the 512 px PNG.
+  logo: "/brand/abit-logo.webp" as string | null,
+  logoPrint: "/brand/abit-logo-512.png",
 };
 
 export const RULES = [
