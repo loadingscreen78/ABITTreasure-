@@ -50,7 +50,7 @@ function Decrypting() {
   }, []);
   return (
     <div className="cv-scene" style={{ position: "relative" }}>
-      <div className="cv-tape" style={v({ "--t": "150ms", fontSize: 12, position: "absolute", top: -70, left: -30, right: -30, textAlign: "center" })}>
+      <div className="cv-tape" style={v({ "--t": "150ms", fontSize: 12, display: "block", margin: "0 -24px 26px", textAlign: "center", whiteSpace: "nowrap", overflow: "hidden" })}>
         Classified · ABIT · CODE2CAREER · Classified · ABIT · CODE2CAREER
       </div>
       <div className="cv-k">Case file TTH · Department of Computer Science</div>
@@ -62,9 +62,6 @@ function Decrypting() {
       <div className="cv-k tabular" style={{ display: "flex", justifyContent: "space-between" }}>
         <span>Decrypting dossier</span>
         <span>{String(pct).padStart(3, "0")}%</span>
-      </div>
-      <div className="cover-bar">
-        <span style={{ animationDuration: "1.7s" }} />
       </div>
     </div>
   );
@@ -375,8 +372,6 @@ const SCENES: Scene[] = [
     render: () => null, // rendered by the component (needs close handlers)
   },
 ];
-const FILM = SCENES.filter((x) => x.id !== "gate");
-const TOTAL = FILM.reduce((s, x) => s + x.ms, 0);
 
 export function IntroFilm() {
   const [open, setOpen] = useState(true);
@@ -504,9 +499,9 @@ export function IntroFilm() {
         <button type="button" className="cv-skip" style={{ minHeight: 40, padding: "0 10px", display: "inline-flex", alignItems: "center", gap: 6 }} onClick={toggleSound} aria-pressed={sound} aria-label={sound ? "Mute music" : "Play music"}>
           <Speaker on={sound} /> Sound
         </button>
-        <span className="cv-k tabular">
-          {s.id === "gate" ? "Ready" : `${String(i).padStart(2, "0")} / ${String(FILM.length).padStart(2, "0")}`}
-        </span>
+        <button type="button" className="cv-skip" style={{ minHeight: 40, padding: "0 12px" }} onClick={close}>
+          Skip <span aria-hidden>→</span>
+        </button>
         </span>
       </div>
 
@@ -532,6 +527,7 @@ export function IntroFilm() {
                 <button
                   type="button"
                   className="btn btn-paper"
+                  style={{ flex: "none" }}
                   onClick={() => {
                     enableSound();
                     setI(1);
@@ -542,7 +538,7 @@ export function IntroFilm() {
                   </span>
                   <span aria-hidden>▸</span>
                 </button>
-                <button type="button" className="cv-skip" style={{ alignSelf: "center" }} onClick={() => setI(1)}>
+                <button type="button" className="cv-skip" style={{ alignSelf: "center", flex: "none" }} onClick={() => setI(1)}>
                   Continue without sound
                 </button>
               </div>
@@ -585,24 +581,6 @@ export function IntroFilm() {
         </div>
       </div>
 
-      <div className="cv-bottom">
-        <div className="cv-segs" style={{ gridTemplateColumns: FILM.map((x) => `${x.ms}fr`).join(" ") }} aria-hidden>
-          {FILM.map((x, k0) => {
-            const k = k0 + 1;
-            return (
-              <span key={x.id} className={`cv-seg${k < i ? " is-done" : k === i ? " is-on" : ""}`} style={v({ "--dur": `${x.ms}ms` })}>
-                <span key={k === i ? `on-${i}` : "off"} />
-              </span>
-            );
-          })}
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
-          <span className="cv-k tabular">~{Math.round(TOTAL / 1000)} s briefing · tap skip any time</span>
-          <button className="cv-skip" type="button" onClick={close}>
-            Skip briefing →
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

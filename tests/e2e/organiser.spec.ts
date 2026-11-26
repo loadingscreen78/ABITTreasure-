@@ -91,7 +91,7 @@ test("student registers on the animated home page → admin downloads Excel → 
   await expect(p.getByRole("dialog", { name: /Welcome briefing/ })).toBeVisible();
   await p.waitForTimeout(2500);
   await shot(p, "home-film", info.project.name);
-  await p.getByRole("button", { name: /Skip briefing/ }).click();
+  await p.getByRole("button", { name: /^Skip/ }).click();
   await expect(p.getByRole("dialog", { name: /Welcome briefing/ })).toHaveCount(0);
   await expect(p.getByRole("heading", { name: "Tech Treasure Hunt" })).toBeVisible();
   await p.waitForTimeout(2500);

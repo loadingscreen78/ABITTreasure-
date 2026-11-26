@@ -1647,7 +1647,7 @@ button {
 }
 .cv-stage {
   position: absolute;
-  inset: 64px 0 104px;
+  inset: 64px 0 16px;
   display: grid;
   place-items: center;
   padding: 0 20px;
