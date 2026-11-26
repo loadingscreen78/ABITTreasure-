@@ -87,8 +87,14 @@ test("student registers on the animated home page → admin downloads Excel → 
   const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   const p = await phone.newPage();
   await p.goto("/");
+  // the ~38 s welcome briefing film covers the page on a first visit — watch a little, then skip
+  await expect(p.getByRole("dialog", { name: /Welcome briefing/ })).toBeVisible();
+  await p.waitForTimeout(2500);
+  await shot(p, "home-film", info.project.name);
+  await p.getByRole("button", { name: /Skip briefing/ }).click();
+  await expect(p.getByRole("dialog", { name: /Welcome briefing/ })).toHaveCount(0);
   await expect(p.getByRole("heading", { name: "Tech Treasure Hunt" })).toBeVisible();
-  await p.waitForTimeout(3500); // let the welcome sequence finish
+  await p.waitForTimeout(2500);
   await shot(p, "home-welcome", info.project.name);
   await p.getByLabel("Team name").fill(name);
   await p.getByLabel("Member 1", { exact: true }).fill("Asha");

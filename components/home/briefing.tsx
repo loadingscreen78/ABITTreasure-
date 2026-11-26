@@ -5,6 +5,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { RULES } from "@/lib/brand";
 import { Reveal } from "./fx";
+import { LiveSetting } from "./status";
 
 const v = (o: Record<string, string | number>) => o as CSSProperties;
 
@@ -176,7 +177,7 @@ export function PhoneDemo() {
 
 export function Scoring() {
   const items: [string, string, string, string][] = [
-    ["m1", "75", "Clues", "15 clues × 5. Location riddles score when you arrive at the right QR; questions score full marks within 3 tries."],
+    ["m1", "75", "Clues", "15 clues × 5. Location riddles score when you arrive at the right QR; questions score full marks within a few tries (see below)."],
     ["m2", "15", "Final treasure", "Solve the last lock at the finish desk and say the phrase to the judge."],
     ["m3", "5", "Teamwork", "Judges award up to 5 for teamwork and playing by the rules."],
     ["m4", "5", "Speed bonus", "Fastest perfect teams: 5 / 3 / 1. Same total? The faster team gets +0.5 / +0.25 / +0.1."],
@@ -202,7 +203,7 @@ export function Scoring() {
         ))}
       </div>
       <div className="strip strip-note" style={{ marginTop: 16 }}>
-        <strong>Fair play:</strong> wrong answers after the 3rd try no longer score, and each team gets at most <strong>5 wrong tries a minute</strong> across all its phones. Near-misses (like &ldquo;right idea, give the short name&rdquo;) don&apos;t cost a try.
+        <strong>Fair play:</strong> a question scores full marks within <strong><LiveSetting k="fullMarksWithinAttempts" fallback={3} /> tries</strong>; after that it still unlocks the next clue but scores 0. Each team gets at most <strong><LiveSetting k="answerRateLimit" fallback={5} /> wrong tries a minute</strong> across all its phones. Near-misses (like &ldquo;right idea, give the short name&rdquo;) don&apos;t cost a try.
       </div>
     </Reveal>
   );

@@ -3,7 +3,8 @@ import { Footer, Marquee, Wordmark } from "@/components/ui/brand";
 import { IconArrow, IconCamera, IconLock, IconPin, RoughFilter } from "@/components/ui/icons";
 import { RegisterForm } from "@/components/home/RegisterForm";
 import { Seal, RouteMap } from "@/components/home/art";
-import { Cipher, IntroCover, LiveStatus, Reveal, Scramble, SplitFlap } from "@/components/home/fx";
+import { Cipher, LiveStatus, Reveal, Scramble, SplitFlap } from "@/components/home/fx";
+import { IntroFilm, ReplayButton } from "@/components/home/Intro";
 import { Faq, PhoneDemo, Rules, Scoring, Timeline, Wallet } from "@/components/home/briefing";
 import { BRAND } from "@/lib/brand";
 
@@ -15,7 +16,7 @@ const TICK =
 
 // Runs before first paint: skip the cover on repeat visits in this session / for reduced motion.
 // (Injects a <style> rather than touching <html>, so React hydration stays clean.)
-const PRE = `try{if(sessionStorage.getItem('tth-intro')||matchMedia('(prefers-reduced-motion: reduce)').matches){window.__tthSeen=1;document.head.insertAdjacentHTML('beforeend','<style id="tth-seen">.cover{display:none!important}.stage{animation-delay:calc(var(--d,0)*1ms)!important}.hero-watermark,.seal{animation-delay:.3s!important}</style>')}}catch(e){}`;
+const PRE = `try{if(sessionStorage.getItem('tth-intro')||matchMedia('(prefers-reduced-motion: reduce)').matches){window.__tthSeen=1;document.head.insertAdjacentHTML('beforeend','<style id="tth-seen">.cover{display:none!important}.stage{animation-delay:calc(var(--d,0)*1ms)!important}.hero-watermark,.seal{animation-delay:.3s!important}</style>')}else{window.__tthOpen=1;document.head.insertAdjacentHTML('beforeend','<style id="tth-hold">.stage,.hero-watermark,.seal,.ticker-track{animation-play-state:paused!important}</style>');setTimeout(function(){var h=document.getElementById('tth-hold');if(h)h.remove()},45000)}}catch(e){}`;
 
 const STEPS: [string, string, string][] = [
   ["Enlist", "Register your team below. On the day, collect your Team ID + password slip at the registration desk.", "-2deg"],
@@ -47,7 +48,7 @@ export default function Home() {
     <>
       <script dangerouslySetInnerHTML={{ __html: PRE }} />
       <RoughFilter />
-      <IntroCover />
+      <IntroFilm />
       <div className="scroll-bar" aria-hidden />
       <div className="ticker" aria-hidden>
         <span className="ticker-track">
@@ -115,9 +116,12 @@ export default function Home() {
               Continue my hunt <IconArrow />
             </Link>
           </div>
-          <a className="scroll-cue t-meta stage" href="#route" style={{ ["--d" as string]: 760, marginTop: 22, textDecoration: "none" }}>
-            Open the file <i aria-hidden>↓</i>
-          </a>
+          <div className="stage" style={{ ["--d" as string]: 760, marginTop: 22, display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap" }}>
+            <a className="scroll-cue t-meta" href="#route" style={{ textDecoration: "none" }}>
+              Open the file <i aria-hidden>↓</i>
+            </a>
+            <ReplayButton />
+          </div>
         </section>
 
         {/* ---------------- 01 BRIEFING ---------------- */}

@@ -1,90 +1,40 @@
 "use client";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { usePublicStatus } from "./status";
 
 const GLYPHS = "01<>/#%&";
-const SKIP_CSS = ".cover{display:none!important}.stage{animation-delay:calc(var(--d,0)*1ms)!important}.hero-watermark,.seal{animation-delay:.3s!important}";
 const introSeen = () => typeof window !== "undefined" && !!(window as unknown as { __tthSeen?: number }).__tthSeen;
-function skipIntro() {
-  (window as unknown as { __tthSeen?: number }).__tthSeen = 1;
-  if (!document.getElementById("tth-seen")) document.head.insertAdjacentHTML("beforeend", `<style id="tth-seen">${SKIP_CSS}</style>`);
-}
 const reduced = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-/** Dossier cover: "DECRYPTING 000%" → flap lifts (CSS). Plays once per browser session; tap to skip. */
-export function IntroCover() {
-  const [pct, setPct] = useState(0);
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    try {
-      sessionStorage.setItem("tth-intro", "1");
-    } catch {
-      /* ignore */
-    }
-    if (introSeen() || reduced()) return;
-    // Follow the CSS progress bar's own clock so the % and the bar always agree.
-    const bar = ref.current?.querySelector(".cover-bar > span");
-    const t0 = performance.now();
-    let raf = 0;
-    const tick = (t: number) => {
-      const anim = bar?.getAnimations?.()[0];
-      const ct = anim && typeof anim.currentTime === "number" ? anim.currentTime : t - t0;
-      const p = Math.min(1, Math.max(0, (ct - 200) / 1300));
-      setPct(Math.round(p * 100));
-      if (p < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    const done = setTimeout(skipIntro, 2600);
-    return () => {
-      cancelAnimationFrame(raf);
-      clearTimeout(done);
-    };
-  }, []);
-  return (
-    <div className="cover" ref={ref} onClick={skipIntro} role="presentation" aria-hidden>
-      <div className="cover-tape t-meta">CLASSIFIED · ABIT · CODE2CAREER · CLASSIFIED · ABIT · CODE2CAREER · CLASSIFIED</div>
-      <div className="cover-inner">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/brand/abit-logo.webp" alt="" width="84" height="84" style={{ width: 84, height: 84, display: "block", marginBottom: 14 }} />
-        <div className="t-meta" style={{ opacity: 0.7 }}>
-          Case file TTH · Dept. of Computer Science
-        </div>
-        <div style={{ margin: "18px 0" }}>
-          <span className="cover-stamp">Classified</span>
-        </div>
-        <div className="t-meta tabular" style={{ display: "flex", justifyContent: "space-between" }}>
-          <span>Decrypting dossier</span>
-          <span>{String(pct).padStart(3, "0")}%</span>
-        </div>
-        <div className="cover-bar">
-          <span />
-        </div>
-        <div className="t-meta" style={{ marginTop: 14, opacity: 0.55 }}>
-          Tap to skip
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/** Headline word that resolves from glyph noise, left to right. */
-export function Scramble({ text, delay = 0, duration = 720 }: { text: string; delay?: number; duration?: number }) {
+/** Headline word that resolves from glyph noise, left to right. Waits for the intro film to close. */
+export function Scramble({ text, delay = 0, duration = 720, immediate = false }: { text: string; delay?: number; duration?: number; immediate?: boolean }) {
   const [out, setOut] = useState(text);
   useEffect(() => {
     if (reduced()) return;
-    const start = performance.now() + (introSeen() ? delay * 0.25 : delay);
     let raf = 0;
-    const tick = (t: number) => {
-      const p = (t - start) / duration;
-      if (p >= 1) return setOut(text);
-      const settled = Math.max(0, Math.floor(p * text.length));
-      setOut(
-        Array.from(text, (ch, i) => (ch === " " || i < settled ? ch : GLYPHS[(i * 5 + Math.floor(t / 45)) % GLYPHS.length]!)).join(""),
-      );
+    const run = (wait: number) => {
+      const start = performance.now() + wait;
+      const tick = (t: number) => {
+        const p = (t - start) / duration;
+        if (p >= 1) return setOut(text);
+        const settled = Math.max(0, Math.floor(p * text.length));
+        setOut(Array.from(text, (ch, i) => (ch === " " || i < settled ? ch : GLYPHS[(i * 5 + Math.floor(t / 45)) % GLYPHS.length]!)).join(""));
+        raf = requestAnimationFrame(tick);
+      };
       raf = requestAnimationFrame(tick);
     };
-    raf = requestAnimationFrame(tick);
+    const w = window as unknown as { __tthOpen?: number };
+    if (!immediate && w.__tthOpen) {
+      const go = () => run(250 + delay * 0.12);
+      window.addEventListener("tth-intro-done", go, { once: true });
+      return () => {
+        window.removeEventListener("tth-intro-done", go);
+        cancelAnimationFrame(raf);
+      };
+    }
+    run(immediate ? delay : introSeen() ? delay * 0.25 : delay);
     return () => cancelAnimationFrame(raf);
-  }, [text, delay, duration]);
+  }, [text, delay, duration, immediate]);
   return <span aria-hidden>{out}</span>;
 }
 
@@ -112,28 +62,12 @@ export function SplitFlap({ words, width = 8, every = 2600 }: { words: string[];
 
 /** Live event status + teams-enlisted counter (public, content-free). */
 export function LiveStatus() {
-  const [s, setS] = useState<{ status: string; startedAt: string | null; enlisted: number | null; skew: number } | null>(null);
+  const s = usePublicStatus();
   const [shown, setShown] = useState(0);
   const [now, setNow] = useState(0);
   useEffect(() => {
-    let live = true;
-    const load = async () => {
-      try {
-        const r = await fetch("/api/public/status", { cache: "no-store" });
-        const d = (await r.json()) as { status: string; startedAt: string | null; enlisted: number | null; now: string };
-        if (live) setS({ ...d, skew: new Date(d.now).getTime() - Date.now() });
-      } catch {
-        /* offline: keep last */
-      }
-    };
-    void load();
-    const id = setInterval(load, 30_000);
     const tick = setInterval(() => setNow(Date.now()), 1000);
-    return () => {
-      live = false;
-      clearInterval(id);
-      clearInterval(tick);
-    };
+    return () => clearInterval(tick);
   }, []);
   useEffect(() => {
     const target = s?.enlisted ?? 0;
