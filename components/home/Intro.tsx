@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { SplitFlap } from "./fx";
 import { Score } from "@/lib/client/score";
+import { Celebrate } from "@/components/ui/Celebrate";
 
 /**
  * Opening film — the INAUGURAL CODE2CAREER welcome (Est. 2026).
@@ -94,6 +95,8 @@ interface Scene {
   ms: number;
   say: string;
   render: () => ReactNode;
+  /** Full-screen celebration layer for this scene (confetti / fireworks). */
+  fx?: () => ReactNode;
 }
 
 const SCENES: Scene[] = [
@@ -125,6 +128,7 @@ const SCENES: Scene[] = [
     id: "welcome",
     ms: 3400,
     say: "Welcome to the inaugural edition of",
+    fx: () => <Celebrate kind="confetti" delay={450} />,
     render: () => (
       <div className="cv-scene" style={{ textAlign: "center" }}>
         <div className="cv-k cv-a" style={v({ "--t": "100ms", fontSize: "clamp(12px, 3.4vw, 18px)", letterSpacing: "0.4em" })}>
@@ -193,7 +197,10 @@ const SCENES: Scene[] = [
           Lighting of the lamp
         </div>
         <div style={{ display: "flex", justifyContent: "center", marginTop: 8 }}>
-          <Diya />
+          <div style={{ position: "relative" }}>
+            <Diya />
+            <Celebrate kind="embers" delay={900} duration={3200} originX={0.5} originY={0.62} pad={90} padTop={160} />
+          </div>
         </div>
         <div className="t-riddle cv-a" style={v({ "--t": "1500ms", fontSize: "clamp(22px, 6vw, 40px)", marginTop: 6 })}>
           Tamaso Mā Jyotirgamaya
@@ -236,6 +243,7 @@ const SCENES: Scene[] = [
     id: "open",
     ms: 6000,
     say: "Inaugurated. Welcome, second-years. Enter, or register your team.",
+    fx: () => <Celebrate kind="fireworks" delay={250} duration={5200} />,
     render: () => null, // rendered by the component (needs close handlers)
   },
 ];
@@ -372,6 +380,11 @@ export function IntroFilm() {
         </span>
       </div>
 
+      {s.fx && (
+        <div key={`fx-${s.id}-${i}`} aria-hidden style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 2 }}>
+          {s.fx()}
+        </div>
+      )}
       <div className="cv-stage">
         <span className="sr-only" aria-live="polite">
           {s.say}

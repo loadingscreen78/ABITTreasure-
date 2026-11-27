@@ -261,6 +261,28 @@ export class Score {
     notes.forEach((n, i) => this.blip(t + i * 0.07, hz(n), 0.1, 0.5, "triangle"));
   }
 
+  private confettiPop(t: number) {
+    this.noiseHit(t, "highpass", 2500, 0.7, 0.45, 0.12);
+    this.kick(t, 0.6);
+    for (let i = 0; i < 10; i++) this.noiseHit(t + 0.08 + i * 0.045 + Math.random() * 0.03, "highpass", 6000, 1, 0.1, 0.02);
+  }
+  private firework(t: number) {
+    // whistle up, then thump + crackle
+    const o = this.ctx.createOscillator();
+    o.type = "sine";
+    o.frequency.setValueAtTime(900, t);
+    o.frequency.exponentialRampToValueAtTime(2600, t + 0.6);
+    const g = this.ctx.createGain();
+    this.env(g, t, 0.05, 0.05, 0.6);
+    o.connect(g).connect(this.bus);
+    o.start(t);
+    o.stop(t + 0.7);
+    const b = t + 0.72;
+    this.kick(b, 0.8);
+    this.noiseHit(b, "lowpass", 1200, 0.7, 0.4, 0.3);
+    for (let i = 0; i < 16; i++) this.noiseHit(b + 0.12 + i * 0.05 + Math.random() * 0.04, "highpass", 5000 + Math.random() * 3000, 1, 0.09, 0.015);
+  }
+
   /** Scene-synced cues. Offsets match the CSS animation delays in components/home/Intro.tsx. */
   cue(scene: string) {
     if (this.dead) return;
@@ -332,6 +354,7 @@ export class Score {
         this.blip(t + 0.1, hz(69), 0.08, 0.6, "triangle");
         this.riser(t + 0.05, 0.4);
         this.impact(t + 0.45);
+        this.confettiPop(t + 0.46);
         this.chime(t + 0.6, [69, 76, 81, 88]);
         break;
       case "series":
@@ -364,6 +387,7 @@ export class Score {
         break;
       case "open":
         this.setLevel(1);
+        for (let k = 0; k < 8; k++) this.firework(t + 0.25 + k * 0.46 + Math.random() * 0.1);
         this.impact(t + 0.3);
         this.pad([57, 64, 69, 72], t + 0.3, 3.6);
         this.chime(t + 0.5, [69, 72, 76, 81, 84]);
