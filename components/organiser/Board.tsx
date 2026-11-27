@@ -56,7 +56,7 @@ export default function Board() {
       <header style={{ display: "flex", alignItems: "center", gap: 18, padding: "14px 2.5vw", borderBottom: `2px solid ${fg}` }}>
         <Wordmark size="md" />
         <span className="t-meta" style={{ fontSize: "0.7em" }}>
-          {BRAND.instituteFull} · {BRAND.department} · {BRAND.series}
+          {BRAND.instituteFull} · {BRAND.department} · {BRAND.series} · {BRAND.edition} · {BRAND.est}
         </span>
         <span className="t-mono tabular" style={{ marginLeft: "auto", fontSize: "1.6em", fontWeight: 600 }}>
           {data?.event.status === "LIVE" ? mmss(elapsed) : data?.event.status ?? "—"}

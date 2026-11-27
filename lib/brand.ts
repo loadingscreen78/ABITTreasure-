@@ -10,7 +10,9 @@ export const BRAND = {
   mottoMeaning: "Lead me from darkness to light",
   coordinates: "20.4696° N, 85.8516° E",
   address: "Markat Nagar, CDA Sector-1, Cuttack – 753014, Odisha",
-  footer: "ABIT · Department of Computer Science · CODE2CAREER · Tamaso Mā Jyotirgamaya · 20.4696° N, 85.8516° E",
+  edition: "Inaugural edition",
+  est: "Est. 2026",
+  footer: "ABIT · Department of Computer Science · CODE2CAREER · Inaugural edition · Est. 2026 · Tamaso Mā Jyotirgamaya · 20.4696° N, 85.8516° E",
   // Official ABIT logo (from abit.edu.in), resized for the web. Print uses the 512 px PNG.
   logo: "/brand/abit-logo.webp" as string | null,
   logoPrint: "/brand/abit-logo-512.png",

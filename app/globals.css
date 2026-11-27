@@ -1937,3 +1937,99 @@ button {
 @media (prefers-reduced-motion: reduce) {
   .cover.cv { display: none; }
 }
+
+/* ============ inaugural opening ============ */
+.inaug-word {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 125;
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: clamp(32px, min(9.6vw, 13vh), 140px);
+  line-height: 0.9;
+  background: var(--color-signal);
+  color: var(--color-ink);
+  padding: 0.04em 0.14em;
+  transform: rotate(-3deg);
+  box-shadow: 8px 8px 0 0 var(--color-paper);
+}
+.inaug-seal {
+  position: relative;
+  width: clamp(190px, min(52vw, 40vh), 320px);
+  aspect-ratio: 1;
+  margin: 0 auto;
+}
+.inaug-ring {
+  width: 100%;
+  height: 100%;
+  animation: spin 16s linear infinite;
+}
+.inaug-core {
+  position: absolute;
+  inset: 22%;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  border: 3px double var(--color-signal);
+  transform: rotate(-6deg);
+}
+.inaug-year {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 75;
+  font-weight: 800;
+  font-size: clamp(44px, min(14vw, 11vh), 96px);
+  line-height: 0.85;
+  color: var(--color-signal);
+}
+.diya {
+  width: clamp(170px, min(52vw, 34vh), 300px);
+  height: auto;
+}
+.diya-flame {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  opacity: 0;
+  animation: flame-ignite 520ms var(--ease-dossier) 700ms both, flame-flicker 900ms ease-in-out 1300ms infinite alternate;
+}
+@keyframes flame-ignite {
+  0% { opacity: 0; transform: scale(0.1, 0.1); }
+  60% { opacity: 1; transform: scale(1.15, 1.25); }
+  100% { opacity: 1; transform: scale(1, 1); }
+}
+@keyframes flame-flicker {
+  0% { opacity: 1; transform: scale(1, 1) skewX(0deg); }
+  35% { transform: scale(0.94, 1.06) skewX(-3deg); }
+  70% { transform: scale(1.04, 0.96) skewX(2deg); }
+  100% { opacity: 1; transform: scale(0.97, 1.04) skewX(-1deg); }
+}
+.diya-rays {
+  transform-box: view-box;
+  transform-origin: 120px 74px;
+  opacity: 0;
+  animation: rays-in 600ms var(--ease-dossier) 1000ms both, spin 20s linear 1000ms infinite;
+}
+@keyframes rays-in {
+  from { opacity: 0; }
+  to { opacity: 0.85; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .inaug-ring, .diya-rays { animation: none; opacity: 0.85; }
+  .diya-flame { animation: none; opacity: 1; }
+}
+
+/* keyframes shared by the home + intro film (restored) */
+@keyframes pin-pop {
+  0% { opacity: 0; transform: scale(0.2); }
+  70% { opacity: 1; transform: scale(1.12); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes boot-type {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+@keyframes hp-fill {
+  to { transform: scaleY(1); }
+}
+@keyframes hp-hole {
+  to { opacity: 1; }
+}

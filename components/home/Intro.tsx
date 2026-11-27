@@ -1,13 +1,14 @@
 "use client";
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { SplitFlap, Scramble } from "./fx";
-import { LiveSetting } from "./status";
+import { SplitFlap } from "./fx";
 import { Score } from "@/lib/client/score";
 
 /**
- * Opening film: an ~30-second animated briefing that explains the hunt, scene by scene.
- * JS sequences the scenes (so skip / replay / progress work); each scene's motion is CSS
- * (transform / opacity). Plays once per browser session, never for reduced motion.
+ * Opening film — the INAUGURAL CODE2CAREER welcome (Est. 2026).
+ * A ceremonial ~27 s sequence: institute presents → "Welcome to the inaugural edition" →
+ * CODE2CAREER → Established 2026 seal → lighting of the lamp (Tamaso Mā Jyotirgamaya) →
+ * Event 01: Tech Treasure Hunt → inaugurated. JS sequences scenes (skip / replay / sound);
+ * motion is CSS (transform / opacity). Plays once per session, never for reduced motion.
  */
 const v = (o: Record<string, string | number>) => o as CSSProperties;
 const SKIP_CSS =
@@ -35,69 +36,58 @@ function Logo({ size, t = 0 }: { size: number; t?: number }) {
   );
 }
 
-function Decrypting() {
-  const [pct, setPct] = useState(0);
-  useEffect(() => {
-    const t0 = performance.now();
-    let raf = 0;
-    const tick = (t: number) => {
-      const p = Math.min(1, Math.max(0, (t - t0 - 200) / 1700));
-      setPct(Math.round(p * 100));
-      if (p < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, []);
+/** Rotating ceremonial seal: ESTABLISHED 2026. */
+function EstSeal() {
+  const ring = "CODE2CAREER • INAUGURAL EDITION • ESTABLISHED 2026 • ABIT CUTTACK • ";
   return (
-    <div className="cv-scene" style={{ position: "relative" }}>
-      <div className="cv-tape" style={v({ "--t": "150ms", fontSize: 12, display: "block", margin: "0 -24px 26px", textAlign: "center", whiteSpace: "nowrap", overflow: "hidden" })}>
-        Classified · ABIT · CODE2CAREER · Classified · ABIT · CODE2CAREER
-      </div>
-      <div className="cv-k">Case file TTH · Department of Computer Science</div>
-      <div style={{ margin: "22px 0" }}>
-        <span className="cv-stamp" style={v({ "--t": "550ms", color: "#FF5A1F", fontSize: "clamp(38px, 12vw, 84px)", transform: "rotate(-8deg)" })}>
-          Classified
+    <div className="inaug-seal cv-pop" style={v({ "--t": "150ms" })} aria-hidden>
+      <svg viewBox="0 0 200 200" className="inaug-ring">
+        <defs>
+          <path id="inaug-circle" d="M100,100 m-80,0 a80,80 0 1,1 160,0 a80,80 0 1,1 -160,0" />
+        </defs>
+        <circle cx="100" cy="100" r="97" fill="none" stroke="#F2EDE3" strokeWidth="2" />
+        <circle cx="100" cy="100" r="64" fill="none" stroke="#F2EDE3" strokeWidth="1.5" strokeDasharray="3 4" />
+        <text fontFamily="var(--font-mono)" fontSize="11.5" fontWeight="600" fill="#F2EDE3">
+          <textPath href="#inaug-circle" textLength="498" lengthAdjust="spacing">
+            {ring}
+          </textPath>
+        </text>
+      </svg>
+      <div className="inaug-core">
+        <span className="cv-k" style={{ color: "#F2EDE3" }}>
+          Est.
         </span>
-      </div>
-      <div className="cv-k tabular" style={{ display: "flex", justifyContent: "space-between" }}>
-        <span>Decrypting dossier</span>
-        <span>{String(pct).padStart(3, "0")}%</span>
+        <span className="inaug-year">2026</span>
       </div>
     </div>
   );
 }
 
-function Count({ to, ms = 1100, pad = 2, prefix = "" }: { to: number; ms?: number; pad?: number; prefix?: string }) {
-  const [n, setN] = useState(0);
-  useEffect(() => {
-    const t0 = performance.now();
-    let raf = 0;
-    const tick = (t: number) => {
-      const p = Math.min(1, (t - t0) / ms);
-      setN(Math.round(to * (1 - Math.pow(1 - p, 3))));
-      if (p < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [to, ms]);
+/** The ceremonial lamp (diya). The flame ignites, then flickers; rays turn slowly. */
+function Diya() {
   return (
-    <>
-      {prefix}
-      {String(n).padStart(pad, "0")}
-    </>
+    <svg className="diya" viewBox="0 0 240 200" aria-hidden>
+      <g className="diya-rays">
+        {Array.from({ length: 16 }, (_, k) => {
+          const a = (k / 16) * Math.PI * 2;
+          const r1 = 52;
+          const r2 = k % 2 ? 70 : 82;
+          return (
+            <line key={k} x1={120 + Math.cos(a) * r1} y1={74 + Math.sin(a) * r1} x2={120 + Math.cos(a) * r2} y2={74 + Math.sin(a) * r2} stroke="#F2C230" strokeWidth="3" strokeLinecap="square" />
+          );
+        })}
+      </g>
+      <g className="diya-flame">
+        <path d="M120 24 C 136 50, 140 66, 132 80 C 127 89, 113 89, 108 80 C 100 66, 106 48, 120 24 Z" fill="#FF5A1F" />
+        <path d="M120 46 C 128 60, 130 70, 125 78 C 122 83, 118 83, 115 78 C 110 70, 113 60, 120 46 Z" fill="#F2C230" />
+      </g>
+      <path d="M118 88 h4 v10 h-4 z" fill="#F2EDE3" />
+      <path d="M52 112 C 70 160, 170 160, 188 112 L 204 106 L 196 122 C 176 176, 64 176, 44 122 L 36 106 Z" fill="#F2C230" stroke="#121212" strokeWidth="3" />
+      <path d="M44 112 H 196" stroke="#121212" strokeWidth="3" />
+      <path d="M90 168 h60 l8 14 h-76 z" fill="#FF5A1F" stroke="#121212" strokeWidth="3" />
+    </svg>
   );
 }
-
-const PINS: [number, number][] = [
-  [40, 150],
-  [86, 60],
-  [168, 34],
-  [256, 66],
-  [292, 140],
-  [214, 178],
-  [134, 118],
-  [62, 188],
-];
 
 interface Scene {
   id: string;
@@ -107,268 +97,145 @@ interface Scene {
 }
 
 const SCENES: Scene[] = [
-  { id: "gate", ms: 6500, say: "Tap to open the case file with sound, or continue without sound.", render: () => null },
-  { id: "decrypt", ms: 2600, say: "Classified case file. Decrypting.", render: () => <Decrypting /> },
+  { id: "gate", ms: 6500, say: "The inaugural CODE2CAREER. Tap to begin with sound, or continue without sound.", render: () => null },
   {
     id: "presents",
-    ms: 3000,
+    ms: 3400,
     say: "Ajay Binay Institute of Technology, Department of Computer Science, presents.",
     render: () => (
       <div className="cv-scene" style={{ textAlign: "center" }}>
         <div style={{ display: "flex", justifyContent: "center" }}>
-          <Logo size={128} />
+          <Logo size={136} />
         </div>
-        <div className="cv-k cv-a" style={v({ "--t": "450ms", marginTop: 18 })}>
+        <div className="cv-k cv-a" style={v({ "--t": "500ms", marginTop: 20 })}>
           Ajay Binay Institute of Technology (Autonomous), Cuttack
         </div>
-        <div className="cv-h" style={{ fontSize: "clamp(26px, 7vw, 54px)" }}>
-          <span className="cv-type" style={v({ "--t": "800ms", "--dur": "900ms" })}>
+        <div className="cv-h" style={{ fontSize: "clamp(24px, 6.6vw, 52px)" }}>
+          <span className="cv-type" style={v({ "--t": "900ms", "--dur": "900ms" })}>
             Department of Computer Science
           </span>
         </div>
-        <div className="cv-k cv-a" style={v({ "--t": "1700ms", marginTop: 14, letterSpacing: "0.6em", color: "#F2EDE3" })}>
-          presents
-        </div>
-        <div style={{ marginTop: 18 }}>
-          <span className="cv-tape" style={v({ "--t": "2100ms", fontSize: 14 })}>
-            CODE2CAREER
-          </span>
+        <div className="cv-k cv-a" style={v({ "--t": "1900ms", marginTop: 16, letterSpacing: "0.7em", color: "#F2EDE3" })}>
+          proudly presents
         </div>
       </div>
     ),
   },
   {
-    id: "title",
+    id: "welcome",
     ms: 3400,
-    say: "Tech Treasure Hunt. Decode, discover, win.",
+    say: "Welcome to the inaugural edition of",
+    render: () => (
+      <div className="cv-scene" style={{ textAlign: "center" }}>
+        <div className="cv-k cv-a" style={v({ "--t": "100ms", fontSize: "clamp(12px, 3.4vw, 18px)", letterSpacing: "0.4em" })}>
+          Welcome to the
+        </div>
+        <div className="cv-shake" style={v({ "--t": "820ms", marginTop: 14 })}>
+          <span className="cv-slam" style={v({ "--t": "450ms" })}>
+            <span className="inaug-word">Inaugural</span>
+          </span>
+        </div>
+        <div className="cv-k cv-a" style={v({ "--t": "1500ms", marginTop: 18, fontSize: "clamp(12px, 3.4vw, 18px)", letterSpacing: "0.4em" })}>
+          edition of
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: "series",
+    ms: 3800,
+    say: "CODE2CAREER. From code to career.",
+    render: () => (
+      <div className="cv-scene" style={{ textAlign: "center" }}>
+        <h2 className="cv-h" style={{ fontSize: "clamp(28px, min(8.4vw, 12vh), 132px)", margin: 0, whiteSpace: "nowrap" }} aria-label="CODE2CAREER">
+          {Array.from("CODE2CAREER").map((ch, k) => (
+            <span key={k} className="cv-slam" style={v({ "--t": `${120 + k * 95}ms`, display: "inline-block", color: ch === "2" ? "#FF5A1F" : "inherit" })}>
+              {ch}
+            </span>
+          ))}
+        </h2>
+        <div className="cv-a" style={v({ "--t": "1350ms", marginTop: 22 })}>
+          <span className="cv-tape" style={v({ "--t": "1350ms", fontSize: "clamp(12px, 3.2vw, 16px)" })}>
+            From code · to career
+          </span>
+        </div>
+        <p className="cv-sub cv-a" style={v({ "--t": "1900ms" })}>
+          A new series by the Department of Computer Science — built by students, for students.
+        </p>
+      </div>
+    ),
+  },
+  {
+    id: "est",
+    ms: 3600,
+    say: "Established 2026. Edition 01.",
+    render: () => (
+      <div className="cv-scene" style={{ textAlign: "center" }}>
+        <EstSeal />
+        <div style={{ marginTop: 22 }}>
+          <span className="cv-stamp" style={v({ "--t": "1100ms", color: "#FF5A1F", fontSize: "clamp(26px, 8vw, 56px)", transform: "rotate(-6deg)" })}>
+            Edition 01
+          </span>
+        </div>
+        <div className="cv-k cv-a" style={v({ "--t": "1700ms", marginTop: 16 })}>
+          The first of many · Established 2026
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: "lamp",
+    ms: 4400,
+    say: "Lighting of the lamp. Tamaso Ma Jyotirgamaya: lead me from darkness to light.",
+    render: () => (
+      <div className="cv-scene" style={{ textAlign: "center" }}>
+        <div className="cv-k cv-a" style={v({ "--t": "100ms" })}>
+          Lighting of the lamp
+        </div>
+        <div style={{ display: "flex", justifyContent: "center", marginTop: 8 }}>
+          <Diya />
+        </div>
+        <div className="t-riddle cv-a" style={v({ "--t": "1500ms", fontSize: "clamp(22px, 6vw, 40px)", marginTop: 6 })}>
+          Tamaso Mā Jyotirgamaya
+        </div>
+        <div className="cv-k cv-a" style={v({ "--t": "2100ms", marginTop: 10 })}>
+          Lead me from darkness to light
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: "event",
+    ms: 3800,
+    say: "Event zero one: the Tech Treasure Hunt. Decode, discover, win.",
     render: () => (
       <div className="cv-scene">
-        <div className="cv-shake" style={v({ "--t": "980ms" })}>
+        <div className="cv-k cv-a" style={v({ "--t": "0ms" })}>
+          Event 01 · Inaugural edition
+        </div>
+        <div className="cv-shake" style={v({ "--t": "1080ms", marginTop: 10 })}>
           <h2 className="cv-h" style={{ fontSize: "clamp(40px, min(11.4vw, 12vh), 136px)", margin: 0 }}>
-            <span className="cv-slam" style={v({ "--t": "100ms" })}>
+            <span className="cv-slam" style={v({ "--t": "300ms" })}>
               Tech
             </span>
-            <span className="cv-slam" style={v({ "--t": "480ms" })}>
+            <span className="cv-slam" style={v({ "--t": "680ms" })}>
               <span style={{ background: "#FF5A1F", color: "#121212", padding: "0 0.06em" }}>Treasure</span>
             </span>
-            <span className="cv-slam" style={v({ "--t": "860ms" })}>
+            <span className="cv-slam" style={v({ "--t": "1060ms" })}>
               Hunt
             </span>
           </h2>
         </div>
-        <div className="cv-a" style={v({ "--t": "1500ms", marginTop: 22 })}>
-          <SplitFlap words={["DECODE", "DISCOVER", "WIN!"]} every={600} />
+        <div className="cv-a" style={v({ "--t": "1700ms", marginTop: 22 })}>
+          <SplitFlap words={["DECODE", "DISCOVER", "WIN!"]} every={650} />
         </div>
-      </div>
-    ),
-  },
-  {
-    id: "mission",
-    ms: 3600,
-    say: "Your mission: eight checkpoints are hidden across campus.",
-    render: () => (
-      <div className="cv-scene">
-        <div className="cv-k">Your mission</div>
-        <div className="cv-h">
-          <span className="cv-type" style={v({ "--t": "100ms" })}>
-            8 checkpoints.
-          </span>
-          <br />
-          <span className="cv-type" style={v({ "--t": "600ms" })}>
-            Hidden on campus.
-          </span>
-        </div>
-        <svg viewBox="0 0 330 220" width="100%" style={{ display: "block", marginTop: 14, maxHeight: "34vh" }} aria-hidden>
-          {PINS.slice(0, -1).map(([x, y], i) => {
-            const [x2, y2] = PINS[i + 1]!;
-            return <line key={i} className="route-seg" style={v({ "--i": i, animationDelay: `${900 + i * 170}ms` })} x1={x} y1={y} x2={x2} y2={y2} stroke="#F2EDE3" strokeWidth="2" strokeDasharray="5 5" />;
-          })}
-          {PINS.map(([x, y], i) => (
-            <g key={i} className="route-pin" style={v({ "--i": i, animationDelay: `${820 + i * 170}ms` })}>
-              <rect x={x - 12} y={y - 12} width="24" height="24" fill={i === 0 || i === 7 ? "#FF5A1F" : "#F2EDE3"} stroke="#F2EDE3" strokeWidth="1.5" />
-              <text x={x} y={y + 4} textAnchor="middle" fontSize="11" fontFamily="var(--font-mono)" fontWeight="600" fill="#121212">
-                {String(i + 1).padStart(2, "0")}
-              </text>
-            </g>
-          ))}
-        </svg>
-        <div style={{ marginTop: 8 }}>
-          <span className="cv-stamp" style={v({ "--t": "2400ms", color: "#FF5A1F", fontSize: 18, transform: "rotate(-4deg)" })}>
-            Locations classified
-          </span>
-        </div>
-      </div>
-    ),
-  },
-  {
-    id: "scan",
-    ms: 3000,
-    say: "Step one: scan. Point your phone camera at the checkpoint QR card.",
-    render: () => (
-      <div className="cv-scene">
-        <div className="cv-step">
-          <span className="no">01</span>
-          <span className="cv-h" style={{ margin: 0 }}>
-            Scan
-          </span>
-        </div>
-        <div className="cv-vf">
-          <i />
-          <i />
-          <i />
-          <i />
-          <svg viewBox="0 0 11 11" width="62%" style={{ position: "absolute", left: "19%", top: "19%" }} aria-hidden>
-            {"11101011101101010101111011100010010111101010111010001000101011101110101110110101010111101".split("").map((c, k) =>
-              c === "1" ? <rect key={k} x={k % 11} y={Math.floor(k / 11)} width="1" height="1" fill="#F2EDE3" /> : null,
-            )}
-          </svg>
-          <span className="scan" />
-        </div>
-        <div className="cv-k cv-a" style={v({ "--t": "1300ms", marginTop: 16, color: "#FF5A1F", textAlign: "center" })}>
-          Checkpoint detected · CP—01
-        </div>
-        <p className="cv-sub cv-a" style={v({ "--t": "1600ms", textAlign: "center" })}>
-          Point your phone camera at the QR card, then log in with your Team ID.
-        </p>
-      </div>
-    ),
-  },
-  {
-    id: "solve",
-    ms: 3600,
-    say: "Step two: solve the tech question. A correct answer is verified and scores marks.",
-    render: () => (
-      <div className="cv-scene">
-        <div className="cv-step">
-          <span className="no">02</span>
-          <span className="cv-h" style={{ margin: 0 }}>
-            Solve
-          </span>
-        </div>
-        <div className="cv-card cv-a" style={v({ "--t": "250ms", marginTop: 16, position: "relative" })}>
-          <div className="t-meta" style={{ borderBottom: "1.5px solid #121212", padding: "8px 12px" }}>
-            [ Q·?? // sample question ]
-          </div>
-          <div style={{ padding: "12px", fontSize: "clamp(16px, 4.6vw, 22px)" }}>How many bits make one byte?</div>
-          <div style={{ padding: "0 12px 14px" }}>
-            <div className="t-mono" style={{ fontSize: 24, borderBottom: "3px solid #121212", padding: "2px 0" }}>
-              <span className="cv-type" style={v({ "--t": "900ms", "--dur": "300ms", "--bg": "#FBF8F2" })}>
-                8
-              </span>
-            </div>
-          </div>
-          <span className="cv-stamp" style={v({ "--t": "1500ms", color: "#0E6B4C", fontSize: "clamp(24px, 7vw, 40px)", position: "absolute", right: 14, top: 40, background: "color-mix(in srgb, #FBF8F2 80%, transparent)", transform: "rotate(-8deg)" })}>
-            Verified
-          </span>
-        </div>
-        <p className="cv-sub cv-a" style={v({ "--t": "2000ms" })}>
-          <strong style={{ color: "#FF5A1F" }}>+5 marks</strong> for each clue — full marks within <LiveSetting k="fullMarksWithinAttempts" fallback={3} /> tries.
-        </p>
-      </div>
-    ),
-  },
-  {
-    id: "decrypt-riddle",
-    ms: 3400,
-    say: "Step three: decrypt. Each correct answer reveals a riddle to the next place.",
-    render: () => (
-      <div className="cv-scene">
-        <div className="cv-step">
-          <span className="no">03</span>
-          <span className="cv-h" style={{ margin: 0 }}>
-            Decrypt
-          </span>
-        </div>
-        <div className="cv-card cv-a" style={v({ "--t": "200ms", marginTop: 18, padding: "26px 16px 16px", position: "relative" })}>
-          <span className="tape t-meta" style={{ position: "absolute", top: -12, left: 14 }}>
-            Next location · sample
-          </span>
-          <p className="t-riddle" style={{ margin: 0, fontSize: "clamp(18px, 5vw, 28px)" }}>
-            &ldquo;
-            <Scramble text="I hum all day and glow on every desk. Find the room where I live." delay={500} duration={1300} immediate />
-            &rdquo;
-          </p>
-        </div>
-        <p className="cv-sub cv-a" style={v({ "--t": "2100ms" })}>
-          A right answer decrypts the riddle to the next checkpoint — only for your team.
-        </p>
-      </div>
-    ),
-  },
-  {
-    id: "move",
-    ms: 3200,
-    say: "Step four: move. Walk to the next place, find its QR, and repeat eight times.",
-    render: () => (
-      <div className="cv-scene">
-        <div className="cv-step">
-          <span className="no">04</span>
-          <span className="cv-h" style={{ margin: 0 }}>
-            Move
-          </span>
-        </div>
-        <div className="cv-punch" aria-hidden>
-          {Array.from({ length: 8 }, (_, i) => (
-            <span key={i} style={v({ "--i": i })}>
-              <b style={v({ "--i": i })} />
-            </span>
-          ))}
-        </div>
-        <p className="cv-sub cv-a" style={v({ "--t": "2300ms" })}>
-          Walk there, find the next QR, repeat. One punch per checkpoint — eight to finish.
-        </p>
-      </div>
-    ),
-  },
-  {
-    id: "numbers",
-    ms: 3200,
-    say: "Eight checkpoints, fifteen clues, one hundred marks, about twenty minutes.",
-    render: () => (
-      <div className="cv-scene">
-        <div className="cv-k">The file in numbers</div>
-        <div className="cv-nums">
-          {[
-            [8, "Checkpoints", ""],
-            [15, "Clues", ""],
-            [100, "Marks", ""],
-            [20, "Minutes", "~"],
-          ].map(([n, l, p], i) => (
-            <div key={l as string} className="cv-a" style={v({ "--t": `${i * 160}ms` })}>
-              <div className="n">
-                <Count to={n as number} prefix={p as string} />
-              </div>
-              <div className="cv-k" style={{ marginTop: 6 }}>
-                {l}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    ),
-  },
-  {
-    id: "rules",
-    ms: 3400,
-    say: "Teams of three or four. Stay together, play fair, no searching. The fastest perfect team takes the bonus.",
-    render: () => (
-      <div className="cv-scene">
-        <div className="cv-k">Rules of engagement</div>
-        {["Teams of 3–4 · stay together", "Follow the clue order", "No searching the internet", "Fastest perfect team wins the bonus"].map((r, i) => (
-          <div key={r} className="cv-rule cv-a" style={v({ "--t": `${150 + i * 380}ms` })}>
-            <span className="tick" aria-hidden>
-              ✓
-            </span>
-            {r}
-          </div>
-        ))}
       </div>
     ),
   },
   {
     id: "open",
-    ms: 5200,
-    say: "The file is open. Enter the hunt or register your team.",
+    ms: 6000,
+    say: "Inaugurated. Welcome, second-years. Enter, or register your team.",
     render: () => null, // rendered by the component (needs close handlers)
   },
 ];
@@ -485,7 +352,7 @@ export function IntroFilm() {
   if (!open) return null;
   const s = SCENES[i]!;
   return (
-    <div className={`cover cv${js ? "" : " cv-css"}${leaving ? " is-leaving" : ""}`} role="dialog" aria-modal="true" aria-label="Welcome briefing: how the Tech Treasure Hunt works">
+    <div className={`cover cv${js ? "" : " cv-css"}${leaving ? " is-leaving" : ""}`} role="dialog" aria-modal="true" aria-label="Welcome briefing: the inaugural CODE2CAREER, established 2026">
       <noscript>
         <style>{".cover{display:none!important}"}</style>
       </noscript>
@@ -493,7 +360,7 @@ export function IntroFilm() {
         <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/brand/abit-logo.webp" alt="ABIT" width={30} height={30} style={{ width: 30, height: 30 }} />
-          <span className="cv-k">Briefing</span>
+          <span className="cv-k">Inaugural · Est. 2026</span>
         </span>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
         <button type="button" className="cv-skip" style={{ minHeight: 40, padding: "0 10px", display: "inline-flex", alignItems: "center", gap: 6 }} onClick={toggleSound} aria-pressed={sound} aria-label={sound ? "Mute music" : "Play music"}>
@@ -516,11 +383,14 @@ export function IntroFilm() {
                 <Logo size={88} />
               </div>
               <div className="cv-k cv-a" style={v({ "--t": "200ms", marginTop: 16 })}>
-                Case file TTH · Department of Computer Science · ABIT Cuttack
+                Department of Computer Science · ABIT Cuttack
               </div>
-              <div style={{ margin: "20px 0 6px" }}>
-                <span className="cv-stamp" style={v({ "--t": "350ms", color: "#FF5A1F", fontSize: "clamp(32px, 10vw, 70px)", transform: "rotate(-6deg)" })}>
-                  Classified
+              <div className="cv-h cv-a" style={v({ "--t": "300ms", fontSize: "clamp(36px, 11vw, 84px)" })}>
+                Code<span style={{ color: "#FF5A1F" }}>2</span>Career
+              </div>
+              <div style={{ margin: "16px 0 6px" }}>
+                <span className="cv-stamp" style={v({ "--t": "550ms", color: "#FF5A1F", fontSize: "clamp(20px, 6vw, 40px)", transform: "rotate(-6deg)" })}>
+                  Inaugural · Est. 2026
                 </span>
               </div>
               <div className="cv-cta cv-a" style={v({ "--t": "700ms", justifyContent: "center", flexDirection: "column", alignItems: "stretch", maxWidth: 420, margin: "26px auto 0" })}>
@@ -534,16 +404,16 @@ export function IntroFilm() {
                   }}
                 >
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-                    <Speaker on /> Open the file · sound on
+                    <Speaker on /> Begin · sound on
                   </span>
                   <span aria-hidden>▸</span>
                 </button>
                 <button type="button" className="cv-skip" style={{ alignSelf: "center", flex: "none" }} onClick={() => setI(1)}>
-                  Continue without sound
+                  Begin without sound
                 </button>
               </div>
               <p className="cv-k cv-a" style={v({ "--t": "1200ms", marginTop: 16, opacity: 0.7 })}>
-                Headphones or phone speaker up · the briefing starts by itself in a moment
+                Speaker up · the ceremony begins by itself in a moment
               </p>
             </div>
           ) : s.id === "open" ? (
@@ -552,16 +422,19 @@ export function IntroFilm() {
                 <Logo size={96} />
               </div>
               <div style={{ marginTop: 18 }}>
-                <span className="cv-stamp" style={v({ "--t": "300ms", color: "#FF5A1F", fontSize: "clamp(30px, 9vw, 64px)", transform: "rotate(-6deg)" })}>
-                  The file is open
+                <span className="cv-stamp" style={v({ "--t": "300ms", color: "#FF5A1F", fontSize: "clamp(32px, 10vw, 72px)", transform: "rotate(-6deg)" })}>
+                  Inaugurated
                 </span>
               </div>
-              <p className="cv-sub cv-a" style={v({ "--t": "800ms" })}>
-                Decode • Discover • Win!
+              <div className="cv-k cv-a" style={v({ "--t": "700ms", marginTop: 14 })}>
+                CODE2CAREER · Edition 01 · Est. 2026
+              </div>
+              <p className="cv-sub cv-a" style={v({ "--t": "1000ms", fontSize: "clamp(20px, 5.4vw, 30px)", fontWeight: 600, color: "#F2EDE3" })}>
+                Welcome, 2nd-years. Let the hunt begin.
               </p>
-              <div className="cv-cta cv-a" style={v({ "--t": "1100ms", justifyContent: "center" })}>
+              <div className="cv-cta cv-a" style={v({ "--t": "1400ms", justifyContent: "center" })}>
                 <button className="btn btn-paper" onClick={close} type="button">
-                  Enter the hunt <span aria-hidden>→</span>
+                  Enter <span aria-hidden>→</span>
                 </button>
                 <a
                   className="btn btn-ink"
@@ -598,7 +471,7 @@ function Speaker({ on }: { on: boolean }) {
 export function ReplayButton() {
   return (
     <button type="button" className="replay-btn" onClick={() => window.dispatchEvent(new Event("tth-replay"))}>
-      ▸ Replay briefing
+      ▸ Replay the opening
     </button>
   );
 }

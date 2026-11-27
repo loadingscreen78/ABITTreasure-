@@ -12,7 +12,7 @@ import { BRAND } from "@/lib/brand";
 // Everything becomes an instant swap under prefers-reduced-motion. No clues or answers on this page.
 
 const TICK =
-  "Case file TTH  •  Classified  •  8 checkpoints  •  15 clues  •  100 marks  •  2nd-year teams of 3–4  •  ABIT Cuttack  •  Code2Career  •  ";
+  "Inaugural edition  •  Est. 2026  •  Case file TTH  •  Classified  •  8 checkpoints  •  15 clues  •  100 marks  •  2nd-year teams of 3–4  •  ABIT Cuttack  •  Code2Career  •  ";
 
 // Runs before first paint: skip the cover on repeat visits in this session / for reduced motion.
 // (Injects a <style> rather than touching <html>, so React hydration stays clean.)
@@ -86,7 +86,7 @@ export default function Home() {
           </div>
           <Seal />
           <p className="t-meta stage" style={{ ["--d" as string]: 0, margin: "0 0 18px", maxWidth: "62%" }}>
-            File no. TTH · {BRAND.department} · Clearance: 2nd year
+            {BRAND.series} · {BRAND.edition} · {BRAND.est} · {BRAND.department}
           </p>
           <h1 className="hero-title" aria-label="Tech Treasure Hunt">
             <span className="w stage" style={{ ["--d" as string]: 60 }}>

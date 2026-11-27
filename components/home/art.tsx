@@ -1,7 +1,7 @@
 /** Static SVG art for the home page (server-rendered; motion via CSS / native SVG animation). */
 
 export function Seal() {
-  const ring = "TECH TREASURE HUNT • CODE2CAREER • ABIT CUTTACK • ";
+  const ring = "CODE2CAREER • INAUGURAL EDITION • EST. 2026 • ABIT CUTTACK • ";
   return (
     <div className="seal" aria-hidden>
       <svg viewBox="0 0 200 200" className="seal-ring">

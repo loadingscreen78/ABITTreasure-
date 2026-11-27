@@ -326,6 +326,42 @@ export class Score {
         for (let i = 0; i < 4; i++) this.stamp(t + 0.15 + i * 0.38);
         this.riser(t + 2.2, 1.1);
         break;
+      // ---- inaugural opening ----
+      case "welcome":
+        this.setLevel(1);
+        this.blip(t + 0.1, hz(69), 0.08, 0.6, "triangle");
+        this.riser(t + 0.05, 0.4);
+        this.impact(t + 0.45);
+        this.chime(t + 0.6, [69, 76, 81, 88]);
+        break;
+      case "series":
+        this.setLevel(2);
+        for (let k = 0; k < 11; k++) {
+          this.noiseHit(t + 0.12 + k * 0.095, "bandpass", 1800, 1.2, 0.22, 0.04);
+          this.blip(t + 0.12 + k * 0.095, hz(57 + [0, 3, 7, 12, 15, 12, 7, 3, 7, 12, 19][k]!), 0.07, 0.1, "square");
+        }
+        this.impact(t + 1.2);
+        break;
+      case "est":
+        this.setLevel(2);
+        this.chime(t + 0.15, [64, 69, 72, 76]);
+        this.stamp(t + 1.1);
+        this.blip(t + 1.12, hz(45), 0.3, 0.5, "triangle");
+        break;
+      case "lamp":
+        this.setLevel(1);
+        this.riser(t + 0.1, 0.65);
+        this.blip(t + 0.72, hz(81), 0.12, 1.2, "sine");
+        this.chime(t + 0.8, [69, 72, 76, 79, 84, 88]);
+        this.pad([57, 64, 69, 76], t + 0.8, 3.2);
+        break;
+      case "event":
+        this.setLevel(3);
+        this.impact(t + 0.3);
+        this.impact(t + 0.68);
+        this.impact(t + 1.06);
+        this.chime(t + 1.7, [69, 72, 76, 81]);
+        break;
       case "open":
         this.setLevel(1);
         this.impact(t + 0.3);

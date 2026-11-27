@@ -92,7 +92,7 @@ function PrintCheckpointsBody() {
             <article key={c.code} style={{ padding: "11mm 12mm", display: "flex", flexDirection: "column", borderRight: "0.3mm dashed #121212" }}>
               <div className="t-meta" style={{ fontSize: "8.5pt", borderBottom: "0.6mm solid #121212", paddingBottom: "2mm", display: "flex", alignItems: "center", gap: "2.5mm" }}>
                 <PrintLogo mm={10} />
-                ABIT · Department of Computer Science · CODE2CAREER
+                ABIT · Department of Computer Science · CODE2CAREER · Est. 2026
               </div>
               <div className="t-numeral" style={{ fontSize: "62pt", marginTop: "5mm" }}>
                 {cpLabel(c.order)}
